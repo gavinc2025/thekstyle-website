@@ -13,7 +13,7 @@ robots.txt          畀搜尋器爬蟲
 sitemap.xml         網站地圖（畀 Google）
 ```
 
-> ⚠️ 換 domain 後，記得將以下檔案入面嘅 `https://www.thekstyle.mo` 全部改成你嘅真實網址：
+> ⚠️ 換 domain 後，記得將以下檔案入面嘅 `https://www.thekstyle.com` 全部改成你嘅真實網址：
 > `index.html`（canonical / og:url / og:image / 結構化資料）、`robots.txt`、`sitemap.xml`。
 
 ---

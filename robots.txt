@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.thekstyle.mo/sitemap.xml
+Sitemap: https://www.thekstyle.com/sitemap.xml
