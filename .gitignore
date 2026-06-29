@@ -1,0 +1,11 @@
+# OS / 編輯器雜項
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.vscode/
+.idea/
+
+# 臨時檔
+_shot.html
+*.tmp
