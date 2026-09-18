@@ -6,6 +6,7 @@ const branches = [
   {
     en: "Tsai Kong Nam",
     name: "雀仔園分店",
+    slug: "tsaikong",
     addr: "澳門馬大臣街 39-A 號富麗樓地下 B 舖",
     map: "澳門馬大臣街39-A號富麗樓 上手屋",
     photo: "assets/img/branch/tsaikong.jpg"
@@ -13,6 +14,7 @@ const branches = [
   {
     en: "Park N Shop",
     name: "黑沙環百佳分店",
+    slug: "parknshop",
     addr: "澳門黑沙環大馬路 114 號利添閣／利寶閣／利盛閣　百佳購物中心地下內舖 BD（小熊貓入口）",
     map: "澳門黑沙環大馬路114號 百佳購物中心 上手屋",
     photo: "assets/img/branch/parknshop.jpg"
@@ -20,6 +22,7 @@ const branches = [
   {
     en: "San Miu",
     name: "氹仔新苗超市店",
+    slug: "sanmiu",
     addr: "氹仔柯維納馬路　匯景商場地下 AE 舖（商場內舖，入口近匯景花園第三座）",
     map: "氹仔柯維納馬路 匯景商場 上手屋",
     photo: null
@@ -27,6 +30,7 @@ const branches = [
   {
     en: "Nam Keng",
     name: "氹仔消防局店",
+    slug: "nanjing",
     addr: "氹仔南京街 372 號帝庭軒地下 F 座",
     map: "氹仔南京街372號帝庭軒 上手屋",
     photo: "assets/img/branch/nanjing-interior-1.jpg"
@@ -34,6 +38,7 @@ const branches = [
   {
     en: "University of Macau",
     name: "澳門大學店",
+    slug: "um",
     addr: "澳門大學　大學大馬路薈萃坊商場 S8 座 2 樓 2011 室",
     map: "澳門大學 薈萃坊商場 上手屋",
     photo: null
@@ -41,6 +46,7 @@ const branches = [
   {
     en: "The Praia",
     name: "寰宇天下店",
+    slug: "universe",
     addr: "澳門黑沙環中街 194 號寰宇天下地下 AA 座",
     map: "澳門黑沙環中街194號寰宇天下 The K Style 上手屋",
     photo: "assets/img/branch/universe.jpg"
@@ -67,7 +73,8 @@ if (grid) {
         <div class="branch-addr">${icoPin}<span>${b.addr}</span></div>
         <div class="branch-hours">${icoClock} 星期一至日 10:00–20:00</div>
         <div class="branch-actions">
-          <a class="btn btn-gold btn-sm" href="tel:${PHONE}">${icoPhone} 致電</a>
+          <a class="btn btn-gold btn-sm" href="branches/${b.slug}.html">分店詳情</a>
+          <a class="btn btn-outline btn-sm" href="tel:${PHONE}">${icoPhone} 致電</a>
           <a class="btn btn-outline btn-sm" href="${mapUrl}" target="_blank" rel="noopener">${icoPin} 地圖</a>
         </div>
       </div>
