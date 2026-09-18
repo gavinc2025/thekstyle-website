@@ -29,7 +29,7 @@ const branches = [
     name: "氹仔消防局店",
     addr: "氹仔南京街 372 號帝庭軒地下 F 座",
     map: "氹仔南京街372號帝庭軒 上手屋",
-    photo: null
+    photo: "assets/img/branch/nanjing-interior-1.jpg"
   },
   {
     en: "University of Macau",
