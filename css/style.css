@@ -152,7 +152,7 @@ section { padding: 96px 0; }
 .hero-zh {
   font-family: var(--serif-tc); font-weight: 700;
   font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: .42em;
-  margin: 8px 0 4px; text-indent: .42em;
+  margin: 8px 0 4px; text-indent: .42em; line-height: 1.35;
 }
 .hero-sub {
   font-family: var(--serif-en); font-style: italic; font-size: 1.1rem;
