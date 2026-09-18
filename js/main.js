@@ -13,15 +13,15 @@ const branches = [
   {
     en: "Park N Shop",
     name: "黑沙環百佳分店",
-    addr: "澳門黑沙環馬路 44-F 號利豐閣/利添閣/利盛閣地下 B、D 座",
-    map: "澳門黑沙環馬路44-F號 上手屋",
+    addr: "澳門黑沙環大馬路 114 號利添閣／利寶閣／利盛閣　百佳購物中心地下內舖 BD（小熊貓入口）",
+    map: "澳門黑沙環大馬路114號 百佳購物中心 上手屋",
     photo: "assets/img/branch/parknshop.jpg"
   },
   {
-    en: "Wai Keng",
-    name: "氹仔匯景分店",
-    addr: "氹仔柯維納馬路 84 號匯景花園第一座地下 A、E 座",
-    map: "氹仔柯維納馬路84號匯景花園 上手屋",
+    en: "San Miu",
+    name: "氹仔新苗超市店",
+    addr: "氹仔柯維納馬路　匯景商場地下 AE 舖（商場內舖，入口近匯景花園第三座）",
+    map: "氹仔柯維納馬路 匯景商場 上手屋",
     photo: null
   },
   {
@@ -29,6 +29,13 @@ const branches = [
     name: "氹仔消防局店",
     addr: "氹仔南京街 372 號帝庭軒地下 F 座",
     map: "氹仔南京街372號帝庭軒 上手屋",
+    photo: null
+  },
+  {
+    en: "University of Macau",
+    name: "澳門大學店",
+    addr: "澳門大學　大學大馬路薈萃坊商場 S8 座 2 樓 2011 室",
+    map: "澳門大學 薈萃坊商場 上手屋",
     photo: null
   },
   {
