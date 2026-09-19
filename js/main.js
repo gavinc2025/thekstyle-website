@@ -25,7 +25,7 @@ const branches = [
     slug: "sanmiu",
     addr: "氹仔柯維納馬路　匯景商場地下 AE 舖（商場內舖，入口近匯景花園第三座）",
     map: "氹仔柯維納馬路 匯景商場 上手屋",
-    photo: null
+    photo: "assets/img/branch/sanmiu.jpg"
   },
   {
     en: "Nam Keng",
@@ -39,9 +39,9 @@ const branches = [
     en: "University of Macau",
     name: "澳門大學店",
     slug: "um",
-    addr: "澳門大學　大學大馬路薈萃坊商場 S8 座 2 樓 2011 室",
+    addr: "澳門大學　大學大馬路薈萃坊商場 S8 座 2 樓 2011 室（超級市場對面）",
     map: "澳門大學 薈萃坊商場 上手屋",
-    photo: null
+    photo: "assets/img/branch/um.jpg"
   },
   {
     en: "The Praia",
