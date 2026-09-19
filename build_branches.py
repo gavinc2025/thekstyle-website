@@ -7,7 +7,7 @@
 """
 import os, html, json
 
-SITE   = "https://www.thekstyle.com"
+SITE   = "https://thekstyle.com"
 PHONE  = "+85368016817"
 PHONE_TXT = "6801 6817"
 HOURS  = "星期一至日 10:00 – 20:00"
