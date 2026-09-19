@@ -73,7 +73,7 @@ if (grid) {
         <div class="branch-addr">${icoPin}<span>${b.addr}</span></div>
         <div class="branch-hours">${icoClock} 星期一至日 10:00–20:00</div>
         <div class="branch-actions">
-          <a class="btn btn-gold btn-sm" href="branches/${b.slug}.html">分店詳情</a>
+          <a class="btn btn-gold btn-sm" href="branches/${b.slug}">分店詳情</a>
           <a class="btn btn-outline btn-sm" href="tel:${PHONE}">${icoPhone} 致電</a>
           <a class="btn btn-outline btn-sm" href="${mapUrl}" target="_blank" rel="noopener">${icoPin} 地圖</a>
         </div>

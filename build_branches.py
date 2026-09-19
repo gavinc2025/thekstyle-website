@@ -92,13 +92,13 @@ def page(b, others):
         '<p class="bp-nophoto">分店相片稍後上載。</p>')
     prices = "".join(f"<tr><th>{e(n)}</th><td>{e(p)}</td></tr>" for n, p in b["price"])
     nav_others = "".join(
-        f'<li><a href="{o["slug"]}.html">{e(o["name"])}<span>{e(o["area"])}</span></a></li>'
+        f'<li><a href="{o["slug"]}">{e(o["name"])}<span>{e(o["area"])}</span></a></li>'
         for o in others if o["slug"] != b["slug"])
     schema = {
         "@context": "https://schema.org", "@type": "HairSalon",
-        "@id": f"{SITE}/branches/{b['slug']}.html#shop",
+        "@id": f"{SITE}/branches/{b['slug']}#shop",
         "name": f"The K Style 上手屋 ‧ {b['name']}",
-        "url": f"{SITE}/branches/{b['slug']}.html",
+        "url": f"{SITE}/branches/{b['slug']}",
         "telephone": "+853-6801-6817", "priceRange": "$",
         "address": {"@type": "PostalAddress", "streetAddress": b["schema_addr"],
                     "addressLocality": "澳門", "addressCountry": "MO"},
@@ -118,7 +118,7 @@ def page(b, others):
 <meta name="description" content="{e(desc)}">
 <meta name="keywords" content="{e(b['kw'])},上手屋,The K Style,澳門單剪">
 <meta name="theme-color" content="#2D8484">
-<link rel="canonical" href="{SITE}/branches/{b['slug']}.html">
+<link rel="canonical" href="{SITE}/branches/{b['slug']}">
 <meta property="og:type" content="business.business">
 <meta property="og:title" content="{e(b['name'])} ‧ The K Style 上手屋">
 <meta property="og:description" content="{e(desc)}">
@@ -217,7 +217,7 @@ def main():
             f.write(page(b, BRANCHES))
         print("寫咗", os.path.relpath(p, root), "—", b["name"], "(%d 張相)" % len(b["photos"]))
     # sitemap
-    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}.html" for b in BRANCHES]
+    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}" for b in BRANCHES]
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:
