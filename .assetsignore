@@ -1,0 +1,8 @@
+# 呢啲唔好 deploy 出去畀人睇
+.git
+.gitignore
+.assetsignore
+.claude
+build_branches.py
+README.md
+wrangler.jsonc

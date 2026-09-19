@@ -1,0 +1,9 @@
+{
+  // The K Style 上手屋 官方網站 — 純靜態，Cloudflare Workers 靜態資源寄存
+  "name": "thekstyle",
+  "compatibility_date": "2026-09-19",
+  "assets": {
+    "directory": "./",
+    "not_found_handling": "404-page"
+  }
+}
