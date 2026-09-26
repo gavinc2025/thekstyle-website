@@ -78,6 +78,7 @@ BRANCHES = [
          map="澳門大學 薈萃坊商場 上手屋",
          howto="澳門大學校園內薈萃坊商場 S8 座，上二樓，超級市場對面。",
          price=[("學生／教職員（學校卡）", "MOP 54"), ("一般收費", "MOP 60")],
+         live="um",   # 路由器偵測師傅返工 → 頁頂顯示「已開門」（_worker/index.js /api/status）
          photos=[("assets/img/branch/um-front.jpg", "澳門大學店門面"),
                  ("assets/img/branch/um.jpg", "澳門大學店店內座位")],
          kw="澳門大學剪髮,澳大理髮,薈萃坊商場,學生剪髮"),
@@ -163,6 +164,23 @@ def page(b, others):
                                "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in b["faq"]]}
         extra_ld = ('\n<script type="application/ld+json">'
                     + json.dumps(faq, ensure_ascii=False, indent=2) + '</script>')
+    live_html = ""
+    live_js = ""
+    if b.get("live"):
+        live_html = '<p class="bp-live" id="liveStatus" hidden></p>\n    '
+        live_js = """
+(function () {
+  var el = document.getElementById("liveStatus");
+  function macauNow() { var d = new Date(Date.now() + 8 * 3600 * 1000); return d.getUTCHours() * 60 + d.getUTCMinutes(); }
+  function show(cls, txt) { el.className = "bp-live " + cls; el.textContent = txt; el.hidden = false; }
+  function tick() {
+    if (macauNow() >= 20 * 60) { show("closed", "已收舖 ‧ 明日 10:00 開門"); return; }
+    fetch("/api/status?shop=%s", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.open) show("open", "已開門（" + d.open + " 開始營業）"); else el.hidden = true;
+    }).catch(function () {});
+  }
+  tick(); setInterval(tick, 60000);
+})();""" % b["live"]
     svc_html = ""
     if b.get("services"):
         rows = "".join(f'<tr><th>{e(n)}<small>{e(d)}</small></th><td>{e(p)}</td></tr>'
@@ -237,7 +255,7 @@ def page(b, others):
   <div class="wrap">
     <nav class="crumb" aria-label="麵包屑"><a href="../index.html">主頁</a> ‧ <a href="../index.html#branches">分店</a> ‧ <span>{e(b['name'])}</span></nav>
     <p class="bp-en">{e(b['en'])}</p>
-    <h1>{e(b['name'])}<small>{e(b['area'])} ‧ {e(b.get('tagline') or '單剪專門店')}</small></h1>
+    {live_html}<h1>{e(b['name'])}<small>{e(b['area'])} ‧ {e(b.get('tagline') or '單剪專門店')}</small></h1>
 
     <ul class="bp-facts">
       <li>{ICO_PIN}<span>{e(b['addr'])}</span></li>
@@ -284,7 +302,7 @@ def page(b, others):
 </footer>
 
 <script>
-document.getElementById("year").textContent = new Date().getFullYear();
+document.getElementById("year").textContent = new Date().getFullYear();{live_js}
 var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
 if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"); }});
 </script>

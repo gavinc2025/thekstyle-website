@@ -72,6 +72,7 @@
   <div class="wrap">
     <nav class="crumb" aria-label="麵包屑"><a href="../index.html">主頁</a> ‧ <a href="../index.html#branches">分店</a> ‧ <span>澳門大學店</span></nav>
     <p class="bp-en">University of Macau</p>
+    <p class="bp-live" id="liveStatus" hidden></p>
     <h1>澳門大學店<small>澳門大學 ‧ 單剪專門店</small></h1>
 
     <ul class="bp-facts">
@@ -125,6 +126,18 @@
 
 <script>
 document.getElementById("year").textContent = new Date().getFullYear();
+(function () {
+  var el = document.getElementById("liveStatus");
+  function macauNow() { var d = new Date(Date.now() + 8 * 3600 * 1000); return d.getUTCHours() * 60 + d.getUTCMinutes(); }
+  function show(cls, txt) { el.className = "bp-live " + cls; el.textContent = txt; el.hidden = false; }
+  function tick() {
+    if (macauNow() >= 20 * 60) { show("closed", "已收舖 ‧ 明日 10:00 開門"); return; }
+    fetch("/api/status?shop=um", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.open) show("open", "已開門（" + d.open + " 開始營業）"); else el.hidden = true;
+    }).catch(function () {});
+  }
+  tick(); setInterval(tick, 60000);
+})();
 var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
 if (t && l) t.addEventListener("click", function () { l.classList.toggle("open"); });
 </script>
