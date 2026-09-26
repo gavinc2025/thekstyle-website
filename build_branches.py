@@ -26,6 +26,8 @@ UNIVERSE_FAQ = [
      "只有寰宇天下店（黑沙環中街 194 號）做洗頭，淨洗頭都得，唔使一定要剪；包吹乾，不包造型。其餘五間分店只做單剪。"),
     ("染髮、電髮幾錢？",
      "染髮 MOP 580 起、燙髮（電髮）MOP 780 起、直髮 MOP 680 起，唔分男女；長頭髮會按長度另加少少。實際價錢可以致電查詢。"),
+    ("用咩牌子嘅染髮劑？",
+     "採用日本 Milbon 專業染髮產品，喺樓上獨立染燙區進行，唔會同剪髮客人擠埋一齊。"),
     ("男仔可唔可以染髮、電髮？",
      "當然得，男士染髮、男仔電髮都係我哋常做嘅服務。"),
     ("使唔使預約？",
@@ -87,7 +89,7 @@ BRANCHES = [
          photos=[("assets/img/branch/universe.jpg", "寰宇天下店門面"),
                  ("assets/img/branch/universe-service.jpg", "寰宇天下店髮型師為客人做頭髮")],
          kw="黑沙環髮型屋,寰宇天下理髮,黑沙環中街剪髮,澳門染髮,黑沙環染髮,澳門電髮,黑沙環燙髮,"
-            "澳門直髮,澳門洗頭,男士染髮,男仔電髮,澳门洗头,澳门染发,澳门烫发",
+            "澳門直髮,澳門洗頭,男士染髮,男仔電髮,Milbon染髮,日本染髮,澳门洗头,澳门染发,澳门烫发",
          tagline="剪髮 ‧ 染髮 ‧ 燙髮 ‧ 洗頭",
          title="寰宇天下店 ‧ 黑沙環剪髮、染髮、電髮、洗頭",
          services=SERVICES, faq=UNIVERSE_FAQ),
@@ -117,7 +119,7 @@ def page(b, others):
     desc = f"The K Style 上手屋 {b['name']}：{b['addr']}。{b['howto']} {HOURS}，致電 {PHONE_TXT} 查詢。"
     if b.get("services"):
         desc = (f"The K Style 上手屋 {b['name']}：全澳唯一做染髮、燙髮（電髮）、直髮同洗頭嘅分店，"
-                f"染髮 MOP 580 起，男女都做。{b['addr']}。{HOURS}，致電 {PHONE_TXT} 預約。")
+                f"樓上設獨立染燙區，採用日本 Milbon 染髮產品，染髮 MOP 580 起，男女都做。{b['addr']}。{HOURS}，致電 {PHONE_TXT} 預約。")
     photos = "".join(
         f'<figure class="bp-photo"><img src="../{src}" alt="{e(alt)}" loading="lazy"></figure>'
         for src, alt in b["photos"]) or (
@@ -167,10 +169,10 @@ def page(b, others):
         svc_html = f"""
   <section class="wrap bp-sec bp-svc" id="services">
     <h2>染髮 ‧ 燙髮 ‧ 直髮 ‧ 洗頭</h2>
-    <p class="bp-lead"><b>全澳上手屋只有呢間分店做</b>，其餘五間只做單剪。男女都做，歡迎男士染髮、男仔電髮。</p>
+    <p class="bp-lead"><b>全澳上手屋只有呢間分店做</b>，其餘五間只做單剪。<b>樓上設獨立染燙區</b>，採用<b>日本 Milbon</b> 專業染髮產品。男女都做，歡迎男士染髮、男仔電髮。</p>
     <table class="bp-price bp-price-svc"><tbody>{rows}</tbody></table>
     <p class="bp-note">以上為起步價，唔分男女；長頭髮會按長度另加少少。染、燙、直、洗頭請先致電 <a href="tel:{PHONE}">{PHONE_TXT}</a> 預約。</p>
-    <p class="bp-sc" lang="zh-Hans">内地朋友：这间分店可以<b>洗头</b>（包吹干）、染发、烫发、拉直，请先致电 {PHONE_TXT} 预约。</p>
+    <p class="bp-sc" lang="zh-Hans">内地朋友：这间分店可以<b>洗头</b>（包吹干）、染发（日本 Milbon）、烫发、拉直，请先致电 {PHONE_TXT} 预约。</p>
   </section>
 
   <section class="wrap bp-sec">
