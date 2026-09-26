@@ -33,7 +33,7 @@ const branches = [
     slug: "nanjing",
     addr: "氹仔南京街 372 號帝庭軒地下 F 座",
     map: "氹仔南京街372號帝庭軒 上手屋",
-    photo: "assets/img/branch/nanjing-interior-1.jpg"
+    photo: "assets/img/branch/nanjing.jpg"
   },
   {
     en: "University of Macau",
@@ -41,7 +41,7 @@ const branches = [
     slug: "um",
     addr: "澳門大學　大學大馬路薈萃坊商場 S8 座 2 樓 2011 室（超級市場對面）",
     map: "澳門大學 薈萃坊商場 上手屋",
-    photo: "assets/img/branch/um.jpg"
+    photo: "assets/img/branch/um-front.jpg"
   },
   {
     en: "The Praia",
@@ -49,7 +49,8 @@ const branches = [
     slug: "universe",
     addr: "澳門黑沙環中街 194 號寰宇天下地下 AA 座",
     map: "澳門黑沙環中街194號寰宇天下 The K Style 上手屋",
-    photo: "assets/img/branch/universe.jpg"
+    photo: "assets/img/branch/universe.jpg",
+    extra: "染髮 ‧ 燙髮 ‧ 直髮 ‧ 洗頭（全澳只有呢間做）"
   }
 ];
 
@@ -72,6 +73,7 @@ if (grid) {
       <div class="branch-content">
         <div class="branch-addr">${icoPin}<span>${b.addr}</span></div>
         <div class="branch-hours">${icoClock} 星期一至日 10:00–20:00</div>
+        ${b.extra ? `<div class="branch-extra">${b.extra}</div>` : ""}
         <div class="branch-actions">
           <a class="btn btn-gold btn-sm" href="branches/${b.slug}">分店詳情</a>
           <a class="btn btn-outline btn-sm" href="tel:${PHONE}">${icoPhone} 致電</a>

@@ -76,3 +76,16 @@
   .bp-sec { padding-top: 34px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---- 大頭服務（寰宇天下店） ---- */
+.bp-lead { font-size: 1.02rem; line-height: 1.9; margin: 0 0 14px; max-width: 62ch; }
+.bp-price-svc { max-width: 560px; }
+.bp-price-svc th small { display: block; font-size: .8rem; color: var(--muted); font-weight: 400; margin-top: 3px; }
+.bp-sc { margin-top: 16px; padding: 12px 16px; background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); font-size: .93rem; line-height: 1.8; max-width: 62ch; }
+.bp-faq { max-width: 62ch; border-bottom: 1px solid rgba(45,132,132,.16); }
+.bp-faq summary { cursor: pointer; padding: 13px 0; font-weight: 500; color: var(--teal-deep); }
+.bp-faq p { margin: 0 0 14px; line-height: 1.85; }
+.bp-xsell { margin: 0; padding: 14px 18px; background: var(--white); border-left: 3px solid var(--gold);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm); line-height: 1.8; max-width: 62ch; }
+.bp-xsell a, .bp-note a { color: var(--teal-deep); font-weight: 500; }

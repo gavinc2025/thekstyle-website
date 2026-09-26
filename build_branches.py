@@ -12,6 +12,27 @@ PHONE  = "+85368016817"
 PHONE_TXT = "6801 6817"
 HOURS  = "星期一至日 10:00 – 20:00"
 
+# 「大頭」服務 —— 全澳只有寰宇天下店做（其餘五間只做單剪）
+# 價錢係起步價：唔分男女，長頭髮會加少少
+WASH_PRICE = None   # 洗頭價未定 → 顯示「請致電查詢」；定咗改做例如 "MOP 60"
+SERVICES = [
+    ("染髮", "MOP 580 起", "男女都做；長髮按長度另加少少"),
+    ("燙髮（電髮）", "MOP 780 起", "男仔電髮、女士曲髮都得"),
+    ("直髮", "MOP 680 起", "柔順拉直"),
+    ("洗頭（包吹乾）", f"{WASH_PRICE}" if WASH_PRICE else "請致電查詢", "淨洗頭都得，唔使剪；包吹乾，不包造型"),
+]
+UNIVERSE_FAQ = [
+    ("澳門邊間上手屋可以洗頭？",
+     "只有寰宇天下店（黑沙環中街 194 號）做洗頭，淨洗頭都得，唔使一定要剪；包吹乾，不包造型。其餘五間分店只做單剪。"),
+    ("染髮、電髮幾錢？",
+     "染髮 MOP 580 起、燙髮（電髮）MOP 780 起、直髮 MOP 680 起，唔分男女；長頭髮會按長度另加少少。實際價錢可以致電查詢。"),
+    ("男仔可唔可以染髮、電髮？",
+     "當然得，男士染髮、男仔電髮都係我哋常做嘅服務。"),
+    ("使唔使預約？",
+     f"染髮、燙髮、直髮同洗頭請先致電 {PHONE_TXT} 預約；單剪就唔使預約，直接到店取票。"),
+    ("營業時間係幾點？", f"同分店一樣，{HOURS}。"),
+]
+
 BRANCHES = [
     dict(slug="tsaikong", en="Tsai Kong Nam", name="雀仔園分店", area="澳門半島",
          addr="澳門馬大臣街 39-A 號富麗樓地下 B 舖",
@@ -43,7 +64,9 @@ BRANCHES = [
          map="氹仔南京街372號帝庭軒 上手屋",
          howto="近氹仔消防局，帝庭軒地下，南京街街口。",
          price=[("單剪", "MOP 80")],
-         photos=[("assets/img/branch/nanjing-interior-1.jpg", "氹仔消防局店店內座位"),
+         photos=[("assets/img/branch/nanjing.jpg", "氹仔消防局店門面"),
+                 ("assets/img/branch/nanjing-street.jpg", "氹仔消防局店對面街望過去"),
+                 ("assets/img/branch/nanjing-interior-1.jpg", "氹仔消防局店店內座位"),
                  ("assets/img/branch/nanjing-interior-2.jpg", "氹仔消防局店店內霓虹燈裝飾")],
          kw="氹仔髮型屋,氹仔剪髮,消防局理髮,帝庭軒"),
     dict(slug="um", en="University of Macau", area="澳門大學", name="澳門大學店",
@@ -52,7 +75,8 @@ BRANCHES = [
          map="澳門大學 薈萃坊商場 上手屋",
          howto="澳門大學校園內薈萃坊商場 S8 座，上二樓，超級市場對面。",
          price=[("學生／教職員（學校卡）", "MOP 54"), ("一般收費", "MOP 60")],
-         photos=[("assets/img/branch/um.jpg", "澳門大學店店內座位與門面")],
+         photos=[("assets/img/branch/um-front.jpg", "澳門大學店門面"),
+                 ("assets/img/branch/um.jpg", "澳門大學店店內座位")],
          kw="澳門大學剪髮,澳大理髮,薈萃坊商場,學生剪髮"),
     dict(slug="universe", en="The Praia", area="黑沙環", name="寰宇天下店",
          addr="澳門黑沙環中街 194 號寰宇天下地下 AA 座",
@@ -60,8 +84,13 @@ BRANCHES = [
          map="澳門黑沙環中街194號寰宇天下 The K Style 上手屋",
          howto="寰宇天下地下，黑沙環中街街口。",
          price=[("單剪", "MOP 80")],
-         photos=[("assets/img/branch/universe.jpg", "寰宇天下店門面")],
-         kw="黑沙環髮型屋,寰宇天下理髮,黑沙環中街剪髮"),
+         photos=[("assets/img/branch/universe.jpg", "寰宇天下店門面"),
+                 ("assets/img/branch/universe-service.jpg", "寰宇天下店髮型師為客人做頭髮")],
+         kw="黑沙環髮型屋,寰宇天下理髮,黑沙環中街剪髮,澳門染髮,黑沙環染髮,澳門電髮,黑沙環燙髮,"
+            "澳門直髮,澳門洗頭,男士染髮,男仔電髮,澳门洗头,澳门染发,澳门烫发",
+         tagline="剪髮 ‧ 染髮 ‧ 燙髮 ‧ 洗頭",
+         title="寰宇天下店 ‧ 黑沙環剪髮、染髮、電髮、洗頭",
+         services=SERVICES, faq=UNIVERSE_FAQ),
 ]
 
 ICO_PIN = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" '
@@ -84,8 +113,11 @@ def map_url(q):
 
 def page(b, others):
     e = html.escape
-    title = f"{b['name']} ‧ {b['area']}剪髮 | The K Style 上手屋"
+    title = f"{b.get('title') or b['name'] + ' ‧ ' + b['area'] + '剪髮'} | The K Style 上手屋"
     desc = f"The K Style 上手屋 {b['name']}：{b['addr']}。{b['howto']} {HOURS}，致電 {PHONE_TXT} 查詢。"
+    if b.get("services"):
+        desc = (f"The K Style 上手屋 {b['name']}：全澳唯一做染髮、燙髮（電髮）、直髮同洗頭嘅分店，"
+                f"染髮 MOP 580 起，男女都做。{b['addr']}。{HOURS}，致電 {PHONE_TXT} 預約。")
     photos = "".join(
         f'<figure class="bp-photo"><img src="../{src}" alt="{e(alt)}" loading="lazy"></figure>'
         for src, alt in b["photos"]) or (
@@ -109,6 +141,49 @@ def page(b, others):
     }
     if b["photos"]:
         schema["image"] = f"{SITE}/{b['photos'][0][0]}"
+    if b.get("services"):
+        offers = []
+        for n, p, _ in b["services"]:
+            o = {"@type": "Offer", "itemOffered": {"@type": "Service", "name": n}}
+            num = "".join(c for c in p if c.isdigit())
+            if num:
+                o["priceSpecification"] = {"@type": "PriceSpecification", "minPrice": int(num),
+                                           "priceCurrency": "MOP"}
+            offers.append(o)
+        schema["makesOffer"] = offers
+    extra_ld = ""
+    if b.get("faq"):
+        faq = {"@context": "https://schema.org", "@type": "FAQPage",
+               "mainEntity": [{"@type": "Question", "name": q,
+                               "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in b["faq"]]}
+        extra_ld = ('\n<script type="application/ld+json">'
+                    + json.dumps(faq, ensure_ascii=False, indent=2) + '</script>')
+    svc_html = ""
+    if b.get("services"):
+        rows = "".join(f'<tr><th>{e(n)}<small>{e(d)}</small></th><td>{e(p)}</td></tr>'
+                       for n, p, d in b["services"])
+        faqs = "".join(f'<details class="bp-faq"><summary>{e(q)}</summary><p>{e(a)}</p></details>'
+                       for q, a in b["faq"])
+        svc_html = f"""
+  <section class="wrap bp-sec bp-svc" id="services">
+    <h2>染髮 ‧ 燙髮 ‧ 直髮 ‧ 洗頭</h2>
+    <p class="bp-lead"><b>全澳上手屋只有呢間分店做</b>，其餘五間只做單剪。男女都做，歡迎男士染髮、男仔電髮。</p>
+    <table class="bp-price bp-price-svc"><tbody>{rows}</tbody></table>
+    <p class="bp-note">以上為起步價，唔分男女；長頭髮會按長度另加少少。染、燙、直、洗頭請先致電 <a href="tel:{PHONE}">{PHONE_TXT}</a> 預約。</p>
+    <p class="bp-sc" lang="zh-Hans">内地朋友：这间分店可以<b>洗头</b>（包吹干）、染发、烫发、拉直，请先致电 {PHONE_TXT} 预约。</p>
+  </section>
+
+  <section class="wrap bp-sec">
+    <h2>常見問題</h2>
+    {faqs}
+  </section>
+"""
+    elif any(o.get("services") for o in others):
+        svc_html = f"""
+  <section class="wrap bp-sec">
+    <p class="bp-xsell">想染髮、電髮、直髮或者洗頭？呢間分店只做單剪，請去 <a href="universe#services">寰宇天下店</a>（黑沙環中街 194 號），先致電 {PHONE_TXT} 預約。</p>
+  </section>
+"""
     return f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -129,7 +204,7 @@ def page(b, others):
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/style.css">
 <link rel="stylesheet" href="../css/branch.css">
-<script type="application/ld+json">{json.dumps(schema, ensure_ascii=False, indent=2)}</script>
+<script type="application/ld+json">{json.dumps(schema, ensure_ascii=False, indent=2)}</script>{extra_ld}
 </head>
 <body class="branch-page">
 
@@ -152,12 +227,12 @@ def page(b, others):
   <div class="wrap">
     <nav class="crumb" aria-label="麵包屑"><a href="../index.html">主頁</a> ‧ <a href="../index.html#branches">分店</a> ‧ <span>{e(b['name'])}</span></nav>
     <p class="bp-en">{e(b['en'])}</p>
-    <h1>{e(b['name'])}<small>{e(b['area'])} ‧ 單剪專門店</small></h1>
+    <h1>{e(b['name'])}<small>{e(b['area'])} ‧ {e(b.get('tagline') or '單剪專門店')}</small></h1>
 
     <ul class="bp-facts">
       <li>{ICO_PIN}<span>{e(b['addr'])}</span></li>
       <li>{ICO_CLOCK}<span>{HOURS}</span></li>
-      <li>{ICO_TAG}<span>{e('／'.join(f'{n} {p}' for n, p in b['price']))}</span></li>
+      <li>{ICO_TAG}<span>{e('／'.join(f'{n} {p}' for n, p in b['price']))}{'／染髮 MOP 580 起' if b.get('services') else ''}</span></li>
       <li>{ICO_PHONE}<a href="tel:{PHONE}">{PHONE_TXT}</a></li>
     </ul>
 
@@ -169,6 +244,7 @@ def page(b, others):
 </header>
 
 <main>
+{svc_html}
   <section class="wrap bp-sec">
     <h2>點去</h2>
     <p class="bp-howto">{e(b['howto'])}</p>

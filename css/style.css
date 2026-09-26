@@ -383,3 +383,13 @@ section { padding: 96px 0; }
   .price-card .amount { font-size: 4rem; }
   .btn { padding: 13px 22px; }
 }
+
+/* 分店卡：額外服務（寰宇天下店） */
+.branch-extra { margin: 4px 0 12px; font-size: .86rem; font-weight: 500; color: var(--teal-deep);
+  background: rgba(212,175,95,.16); padding: 6px 10px; border-radius: 6px; display: inline-block; }
+.info-row small a { color: inherit; text-decoration: underline; }
+
+/* 分店卡：額外服務（寰宇天下店，深色底） */
+.branch-extra { margin: -6px 0 16px; font-size: .85rem; font-weight: 500; color: var(--gold);
+  border: 1px solid rgba(216,184,96,.45); padding: 5px 10px; border-radius: 6px; display: inline-block; }
+.info-row small a { color: inherit; text-decoration: underline; }
