@@ -14,16 +14,17 @@ HOURS  = "星期一至日 10:00 – 20:00"
 
 # 「大頭」服務 —— 全澳只有寰宇天下店做（其餘五間只做單剪）
 # 價錢係起步價：唔分男女，長頭髮會加少少
-WASH_PRICE = None   # 洗頭價未定 → 顯示「請致電查詢」；定咗改做例如 "MOP 60"
+# 洗頭只做畀旅客（本地人唔會淨洗頭）→ 洗頭資料一律用簡體，唔放入繁體收費表
+WASH_PRICE = 200    # MOP，包吹乾、不包造型
 SERVICES = [
     ("染髮", "MOP 580 起", "男女都做；長髮按長度另加少少"),
     ("燙髮（電髮）", "MOP 780 起", "男仔電髮、女士曲髮都得"),
     ("直髮", "MOP 680 起", "柔順拉直"),
-    ("洗頭（包吹乾）", f"{WASH_PRICE}" if WASH_PRICE else "請致電查詢", "淨洗頭都得，唔使剪；包吹乾，不包造型"),
 ]
 UNIVERSE_FAQ = [
-    ("澳門邊間上手屋可以洗頭？",
-     "只有寰宇天下店（黑沙環中街 194 號）做洗頭，淨洗頭都得，唔使一定要剪；包吹乾，不包造型。其餘五間分店只做單剪。"),
+    ("澳门哪里可以洗头？",
+     f"上手屋只有寰宇天下店（黑沙环中街 194 号）可以洗头，MOP {WASH_PRICE}，包吹干、不包造型，不用剪发也可以。"
+     f"请先致电 {PHONE_TXT} 预约；营业时间每天 10:00–20:00。"),
     ("染髮、電髮幾錢？",
      "染髮 MOP 580 起、燙髮（電髮）MOP 780 起、直髮 MOP 680 起，唔分男女；長頭髮會按長度另加少少。實際價錢可以致電查詢。"),
     ("用咩牌子嘅染髮劑？",
@@ -31,7 +32,7 @@ UNIVERSE_FAQ = [
     ("男仔可唔可以染髮、電髮？",
      "當然得，男士染髮、男仔電髮都係我哋常做嘅服務。"),
     ("使唔使預約？",
-     f"染髮、燙髮、直髮同洗頭請先致電 {PHONE_TXT} 預約；單剪就唔使預約，直接到店取票。"),
+     f"染髮、燙髮、直髮請先致電 {PHONE_TXT} 預約；單剪就唔使預約，直接到店取票。"),
     ("營業時間係幾點？", f"同分店一樣，{HOURS}。"),
 ]
 
@@ -89,9 +90,9 @@ BRANCHES = [
          photos=[("assets/img/branch/universe.jpg", "寰宇天下店門面"),
                  ("assets/img/branch/universe-service.jpg", "寰宇天下店髮型師為客人做頭髮")],
          kw="黑沙環髮型屋,寰宇天下理髮,黑沙環中街剪髮,澳門染髮,黑沙環染髮,澳門電髮,黑沙環燙髮,"
-            "澳門直髮,澳門洗頭,男士染髮,男仔電髮,Milbon染髮,日本染髮,澳门洗头,澳门染发,澳门烫发",
-         tagline="剪髮 ‧ 染髮 ‧ 燙髮 ‧ 洗頭",
-         title="寰宇天下店 ‧ 黑沙環剪髮、染髮、電髮、洗頭",
+            "澳門直髮,男士染髮,男仔電髮,Milbon染髮,日本染髮,澳门洗头,澳门哪里可以洗头,游客洗头,澳门染发,澳门烫发",
+         tagline="剪髮 ‧ 染髮 ‧ 燙髮 ‧ 直髮",
+         title="寰宇天下店 ‧ 黑沙環剪髮、染髮、電髮 ‧ 澳门洗头",
          services=SERVICES, faq=UNIVERSE_FAQ),
 ]
 
@@ -118,8 +119,8 @@ def page(b, others):
     title = f"{b.get('title') or b['name'] + ' ‧ ' + b['area'] + '剪髮'} | The K Style 上手屋"
     desc = f"The K Style 上手屋 {b['name']}：{b['addr']}。{b['howto']} {HOURS}，致電 {PHONE_TXT} 查詢。"
     if b.get("services"):
-        desc = (f"The K Style 上手屋 {b['name']}：全澳唯一做染髮、燙髮（電髮）、直髮同洗頭嘅分店，"
-                f"樓上設獨立染燙區，採用日本 Milbon 染髮產品，染髮 MOP 580 起，男女都做。{b['addr']}。{HOURS}，致電 {PHONE_TXT} 預約。")
+        desc = (f"The K Style 上手屋 {b['name']}：全澳唯一做染髮、燙髮（電髮）、直髮嘅分店，"
+                f"樓上設獨立染燙區，採用日本 Milbon 染髮產品，染髮 MOP 580 起，男女都做。{b['addr']}。{HOURS}，致電 {PHONE_TXT} 預約。游客洗头 MOP {WASH_PRICE}。")
     photos = "".join(
         f'<figure class="bp-photo"><img src="../{src}" alt="{e(alt)}" loading="lazy"></figure>'
         for src, alt in b["photos"]) or (
@@ -152,6 +153,8 @@ def page(b, others):
                 o["priceSpecification"] = {"@type": "PriceSpecification", "minPrice": int(num),
                                            "priceCurrency": "MOP"}
             offers.append(o)
+        offers.append({"@type": "Offer", "itemOffered": {"@type": "Service", "name": "洗头（包吹干）"},
+                       "price": WASH_PRICE, "priceCurrency": "MOP"})
         schema["makesOffer"] = offers
     extra_ld = ""
     if b.get("faq"):
@@ -168,11 +171,15 @@ def page(b, others):
                        for q, a in b["faq"])
         svc_html = f"""
   <section class="wrap bp-sec bp-svc" id="services">
-    <h2>染髮 ‧ 燙髮 ‧ 直髮 ‧ 洗頭</h2>
+    <h2>染髮 ‧ 燙髮 ‧ 直髮</h2>
     <p class="bp-lead"><b>全澳上手屋只有呢間分店做</b>，其餘五間只做單剪。<b>樓上設獨立染燙區</b>，採用<b>日本 Milbon</b> 專業染髮產品。男女都做，歡迎男士染髮、男仔電髮。</p>
     <table class="bp-price bp-price-svc"><tbody>{rows}</tbody></table>
-    <p class="bp-note">以上為起步價，唔分男女；長頭髮會按長度另加少少。染、燙、直、洗頭請先致電 <a href="tel:{PHONE}">{PHONE_TXT}</a> 預約。</p>
-    <p class="bp-sc" lang="zh-Hans">内地朋友：这间分店可以<b>洗头</b>（包吹干）、染发（日本 Milbon）、烫发、拉直，请先致电 {PHONE_TXT} 预约。</p>
+    <p class="bp-note">以上為起步價，唔分男女；長頭髮會按長度另加少少。染、燙、直請先致電 <a href="tel:{PHONE}">{PHONE_TXT}</a> 預約。</p>
+    <div class="bp-sc" lang="zh-Hans" id="wash">
+      <h3>游客洗头 <span>MOP {WASH_PRICE}</span></h3>
+      <p>全澳上手屋<b>只有这间分店可以洗头</b>，不用剪发也可以。包吹干，不包造型。</p>
+      <p>请先致电 <a href="tel:{PHONE}">{PHONE_TXT}</a> 预约 ‧ 营业时间每天 10:00–20:00 ‧ 黑沙环中街 194 号寰宇天下地下 AA 座</p>
+    </div>
   </section>
 
   <section class="wrap bp-sec">
@@ -183,7 +190,8 @@ def page(b, others):
     elif any(o.get("services") for o in others):
         svc_html = f"""
   <section class="wrap bp-sec">
-    <p class="bp-xsell">想染髮、電髮、直髮或者洗頭？呢間分店只做單剪，請去 <a href="universe#services">寰宇天下店</a>（黑沙環中街 194 號），先致電 {PHONE_TXT} 預約。</p>
+    <p class="bp-xsell">想染髮、電髮或者直髮？呢間分店只做單剪，請去 <a href="universe#services">寰宇天下店</a>（黑沙環中街 194 號），先致電 {PHONE_TXT} 預約。</p>
+    <p class="bp-xsell bp-xsell-sc" lang="zh-Hans">想洗头？请到 <a href="universe#wash">寰宇天下店</a>（黑沙环中街 194 号），MOP {WASH_PRICE}，包吹干，请先致电 {PHONE_TXT} 预约。</p>
   </section>
 """
     return f"""<!DOCTYPE html>

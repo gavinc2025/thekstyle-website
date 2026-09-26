@@ -50,7 +50,7 @@ const branches = [
     addr: "澳門黑沙環中街 194 號寰宇天下地下 AA 座",
     map: "澳門黑沙環中街194號寰宇天下 The K Style 上手屋",
     photo: "assets/img/branch/universe.jpg",
-    extra: "染髮 ‧ 燙髮 ‧ 直髮 ‧ 洗頭（全澳只有呢間做）"
+    extra: "染髮 ‧ 燙髮 ‧ 直髮（全澳只有呢間做）‧ 可洗头"
   }
 ];
 

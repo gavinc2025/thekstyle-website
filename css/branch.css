@@ -89,3 +89,9 @@
 .bp-xsell { margin: 0; padding: 14px 18px; background: var(--white); border-left: 3px solid var(--gold);
   border-radius: var(--radius); box-shadow: var(--shadow-sm); line-height: 1.8; max-width: 62ch; }
 .bp-xsell a, .bp-note a { color: var(--teal-deep); font-weight: 500; }
+.bp-sc h3 { font-family: var(--serif-tc); font-size: 1.1rem; color: var(--teal-deep); margin: 2px 0 8px;
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.bp-sc h3 span { font-family: var(--serif-en); font-size: 1.22rem; }
+.bp-sc p { margin: 0 0 6px; }
+.bp-sc a { color: var(--teal-deep); font-weight: 500; }
+.bp-xsell-sc { margin-top: 12px; }
