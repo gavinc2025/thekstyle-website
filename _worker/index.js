@@ -2,11 +2,21 @@
 //   POST /api/open    路由器見到師傅手機 → 記低今日開門時間（每日第一次為準）
 //                     header: Authorization: Bearer <token>；body: {"shop":"um","time":"09:51"}（加 "dry":true 只測試唔寫）
 //   GET  /api/status?shop=um → {"date":"2026-09-27","open":"09:51"}（未開 = null）
+//   POST /api/roster  NAS 推員工更表（Bearer ROSTER token）→ KV "roster"
+//   GET  /r/<專屬碼>  員工更表頁（見 roster.js；唔俾 Google 收錄）
 // 其餘網址照出靜態檔（wrangler.jsonc 只將 /api/* 交畀呢個程式）
+import { rosterPage, goneHtml } from "./roster.js";
+
 const SHOPS = new Set(["um"]);            // 暫時得澳大店（SH06）
 const TZ_MS = 8 * 3600 * 1000;            // 澳門時間 UTC+8
 
 const macauDate = () => new Date(Date.now() + TZ_MS).toISOString().slice(0, 10);
+const html = (body, status = 200) => new Response(body, {
+  status, headers: {
+    "content-type": "text/html; charset=utf-8", "cache-control": "no-store",
+    "x-robots-tag": "noindex, nofollow", "referrer-policy": "no-referrer",
+  },
+});
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
 });
@@ -19,7 +29,23 @@ async function sha256hex(s) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/r/") && request.method === "GET") {
+      const code = url.pathname.slice(3);
+      const data = /^[A-Za-z0-9_-]{16,64}$/.test(code) && await env.STATUS.get("roster", "json");
+      const name = data && data.links[await sha256hex(code)];
+      return name ? html(rosterPage(data, name, macauDate())) : html(goneHtml, 404);
+    }
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
+
+    if (url.pathname === "/api/roster" && request.method === "POST") {
+      const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+      if (!token || (await sha256hex(token)) !== env.ROSTER_TOKEN_SHA256) return json({ error: "auth" }, 401);
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "body" }, 400); }
+      if (!body || !Array.isArray(body.days) || !Array.isArray(body.shops) || typeof body.links !== "object") return json({ error: "bad" }, 400);
+      await env.STATUS.put("roster", JSON.stringify(body));
+      return json({ ok: true, days: body.days.length, links: Object.keys(body.links).length });
+    }
 
     if (url.pathname === "/api/status" && request.method === "GET") {
       const shop = url.searchParams.get("shop");
