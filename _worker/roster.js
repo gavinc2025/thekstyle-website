@@ -42,11 +42,11 @@ export function rosterPage(data, name, today) {
       <div class="big">${place(w, home)}</div>
       ${mates.length ? `<div class="mates">同你一齊：${mates.map(x => esc(bare(x))).join("、")}</div>` : ""}</div>`;
   };
-  const mine = days.slice(0, 35).map(day => {
+  const mine = days.slice(0, 60).map(day => {
     const w = where(day, name);
     return `<li class="${day.w === 0 || day.w === 6 ? "wkend" : ""}"><span class="d">${md(day.d)}<i>${WK[day.w]}</i></span><span class="p">${place(w, home)}</span></li>`;
   }).join("");
-  const all = days.slice(0, 14).map(day => `
+  const all = days.slice(0, 60).map(day => `
     <section class="day"><h3>${md(day.d)}（${WK[day.w]}）${day.d === today ? "<em>今日</em>" : ""}</h3>
       <table>${data.shops.map(s => `<tr><th>${esc(s)}</th><td>${day.s[s].length ? day.s[s].map(n => staffName(n, name)).join("、") : `<span class="gap">冇人</span>`}</td></tr>`).join("")}
       ${day.off.length ? `<tr class="sub"><th>休息</th><td>${day.off.map(n => staffName(n, name)).join("、")}</td></tr>` : ""}
