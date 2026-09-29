@@ -57,12 +57,35 @@ function balance(data, name) {
   return { v: lb.balance[name], asof: lb.label };
 }
 
+// 上個月假期點變：格式跟老闆發俾同事嘅「【上手屋 8月假期結餘】」訊息
+function leaveDetail(data, name) {
+  const lb = data.leave_balance, d = lb && lb.detail && lb.detail[name];
+  if (!d) return "";
+  const m = lb.month, pm = `${((parseInt(m) + 10) % 12) + 1}月`;
+  const signed = v => (v > 0 ? "+" : v < 0 ? "−" : "") + num(Math.abs(v));
+  const rows = [
+    ["例假", `逢星期${esc(d.weekday)}`],
+    [`${m}應得例假`, `${num(d.due)} 日`],
+    [`${m}實際放假`, `${num(d.taken)} 日`],
+    ["入職日期", esc(d.joined || "")],
+    ["年假", d.grant ? `+${num(d.grant)} 日${d.anniv ? `（${esc(String(d.anniv).replace("★", ""))}）` : ""}` : "無"],
+    ...(d.adj ? [["其他調整", `${signed(d.adj)} 日`]] : []),
+    ["上月結餘", `${num(d.start)} 日<small class="mates">（${pm}尾）</small>`],
+    ["本月結餘", `<b class="${d.end < 0 ? "neg" : ""}">${num(d.end)} 日</b><small class="mates">（${m}尾）</small>`],
+    ...(d.note ? [["備註", esc(d.note)]] : []),
+    [`${m}放假`, esc(d.days || "—")],
+  ];
+  return `<div class="ld"><div class="ldt">【上手屋 ${esc(m)}假期結餘】</div>
+    <table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table></div>`;
+}
+
 function leaveCard(data, name, today) {
   const b = balance(data, name), up = upcoming(data, name, today);
   if (!b && !up.length) return "";
   return `<div class="card leavecard">
     ${b ? `<div class="lbl">假期結餘（截至${esc(b.asof)}）</div><div class="big ${b.v < 0 ? "neg" : ""}">${num(b.v)} 日${b.v < 0 ? "<small>欠假</small>" : ""}</div>` : ""}
     ${up.length ? `<div class="mates">已批假期：${up.join("、")}</div>` : ""}
+    ${b && leaveDetail(data, name) ? `<details open><summary>${esc(data.leave_balance.month)}點計</summary>${leaveDetail(data, name)}</details>` : ""}
     <div class="mates">每月尾計完假期先會更新結餘</div></div>`;
 }
 
@@ -102,7 +125,13 @@ b.work{color:var(--deep)}b.away{color:#1f5fa8}b.off{color:#999;font-weight:500}b
 .day h3 em{font-style:normal;font-size:.75rem;background:var(--gold);color:var(--deep);border-radius:6px;padding:1px 6px;margin-left:6px}
 table{width:100%;border-collapse:collapse;font-size:.95rem}th{text-align:left;width:5em;color:var(--muted);font-weight:500;padding:3px 0;vertical-align:top}td{padding:3px 0}
 tr.sub th,tr.sub td{font-size:.85rem;color:var(--muted)}.me{background:#fdf1c7;border-radius:4px;padding:0 3px;font-weight:700;color:var(--ink)}.gap{color:#c00;font-weight:700}
-.bal{background:#fff;border-radius:14px;padding:6px 14px}.bal th,.bal td{padding:8px 0;border-bottom:1px solid #eee}.bal td.n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;width:4em}
+.bal{background:#fff;border-radius:14px;padding:4px 14px}
+.brow{border-bottom:1px solid #eee}.brow summary,.brow.tot{display:flex;align-items:center;gap:8px;padding:10px 0;cursor:pointer;list-style:none}
+.brow summary::-webkit-details-marker{display:none}.bn{width:4.2em;font-weight:600}.bs{flex:1}.bs small{display:block}
+.brow .n{font-weight:700;font-variant-numeric:tabular-nums;min-width:3em;text-align:right}.brow.tot{border:0;cursor:default}
+.leavecard details summary{margin-top:6px;color:var(--teal);font-size:.9rem;cursor:pointer}
+.ld{background:#faf7ef;border-radius:10px;padding:10px 12px;margin:8px 0 10px}.ldt{font-weight:700;margin-bottom:4px}
+.ld th{width:7.5em;font-size:.88rem}.ld small{margin-left:4px}.ld td{font-size:.92rem}
 .note{font-size:.78rem;color:var(--muted);margin-top:16px}
 </style></head><body>
 <header><h1>${esc(title)}</h1><p>${sub}</p></header>
@@ -136,9 +165,9 @@ function bossPage(data, today) {
   const names = Object.keys(data.home);
   const lb = data.leave_balance;
   const balRows = names.map(n => {
-    const b = balance(data, n), up = upcoming(data, n, today);
-    return `<tr><th>${esc(n)}</th><td>${esc(data.home[n] || "頂班")}${up.length ? `<br><small class="mates">已批：${up.join("、")}</small>` : ""}</td>
-      <td class="n ${b && b.v < 0 ? "neg" : ""}">${b ? num(b.v) : "—"}</td></tr>`;
+    const b = balance(data, n), up = upcoming(data, n, today), det = leaveDetail(data, n);
+    return `<details class="brow"><summary><span class="bn">${esc(n)}</span><span class="bs">${esc(data.home[n] || "頂班")}${up.length ? `<small class="mates">已批：${up.join("、")}</small>` : ""}</span>
+      <span class="n ${b && b.v < 0 ? "neg" : ""}">${b ? num(b.v) : "—"}</span></summary>${det || `<p class="mates">冇明細</p>`}</details>`;
   }).join("");
   const total = lb ? num(names.reduce((s, n) => s + (lb.balance[n] || 0), 0)) : "—";
   return page("上手屋更表 ‧ 老闆", `${updated(data)}　全部員工`, `
@@ -146,7 +175,8 @@ ${tabs([["all", "全店更表"], ["bal", "假期結餘"], ["person", "個人更�
 <div id="all">${allShops(data, days, today, null)}</div>
 <div id="bal" hidden>
   <p class="mates">${lb ? `截至${esc(lb.label)}（已核對）；每月尾計完假期先更新` : "未有假期結餘資料"}</p>
-  <div class="bal"><table>${balRows}<tr><th>合計</th><td></td><td class="n">${total}</td></tr></table></div>
+  <div class="bal">${balRows}<div class="brow tot"><span class="bn">合計</span><span class="bs"></span><span class="n">${total}</span></div></div>
+  <p class="mates">撳個名睇佢上個月點計</p>
 </div>
 <div id="person" hidden>
   ${tabs(names.map(n => ["p-" + n, esc(n)])).replace('class="tabs"', 'class="tabs names"')}
