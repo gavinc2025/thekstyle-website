@@ -79,6 +79,23 @@ function leaveDetail(data, name) {
     <table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table></div>`;
 }
 
+// 上月工資：格式跟老闆發俾同事嘅「【上手屋 9月工資】」訊息；員工只睇到自己
+const money = v => Number(v || 0).toLocaleString("en-US");
+function payTable(data, name) {
+  const pr = data.payroll, p = pr && pr.detail && pr.detail[name];
+  if (!p) return "";
+  const rows = [["單剪數目", String(p.cuts)], ["底薪", money(p.base)], ["單剪拆帳", money(p.split)],
+    [`假期上班${pr.holiday_note ? `（${esc(pr.holiday_note)}）` : ""}`, money(p.holiday)], ["小費", money(p.tips)],
+    ["大頭拆帳", money(p.bighead)], ["獎金", money(p.bonus)], ["合計", `<b>${money(p.total)}</b>`]];
+  return `<div class="ld"><div class="ldt">【上手屋 ${esc(pr.month)}工資】</div>
+    <table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table></div>`;
+}
+function payCard(data, name) {
+  const t = payTable(data, name);
+  return t ? `<div class="card leavecard"><details><summary>${esc(data.payroll.month)}工資</summary>${t}</details>
+    <div class="mates">工資或者假期有唔啱，歡迎打電話問老闆</div></div>` : "";
+}
+
 function leaveCard(data, name, today) {
   const b = balance(data, name), up = upcoming(data, name, today);
   if (!b && !up.length) return "";
@@ -154,10 +171,11 @@ export function rosterPage(data, name, today) {
   return page(`上手屋更表 ‧ ${name}`, `${updated(data)}　${home ? `本店：${esc(home)}` : "頂班師傅"}`, `
 <div class="cards">${card(days[0], "今日")}${card(days[1], "明日")}</div>
 ${leaveCard(data, name, today)}
+${payCard(data, name)}
 ${tabs([["mine", "我嘅更"], ["all", "全店更表"]])}
 <div id="mine">${myList(data, days, name)}</div>
 <div id="all" hidden>${allShops(data, days, today, name)}</div>
-<p class="note">藍色＝去其他舖　（頂）＝頂班　（調）＝休息日調咗返工<br>以呢頁為準；有問題搵老闆。呢條連結係你專用，唔好轉發。</p>`);
+<p class="note">藍色＝去其他舖　（頂）＝頂班　（調）＝休息日調咗返工<br>以呢頁為準；工資、假期或者更表有問題，歡迎打電話問老闆。<br>呢條連結係你專用，有你嘅工資資料，唔好轉發俾其他人。</p>`);
 }
 
 function bossPage(data, today) {
@@ -171,18 +189,24 @@ function bossPage(data, today) {
   }).join("");
   const total = lb ? num(names.reduce((s, n) => s + (lb.balance[n] || 0), 0)) : "—";
   return page("上手屋更表 ‧ 老闆", `${updated(data)}　全部員工`, `
-${tabs([["all", "全店更表"], ["bal", "假期結餘"], ["person", "個人更表"]])}
+${tabs([["all", "全店更表"], ["bal", "假期結餘"], ["pay", "工資"], ["person", "個人更表"]])}
 <div id="all">${allShops(data, days, today, null)}</div>
 <div id="bal" hidden>
   <p class="mates">${lb ? `截至${esc(lb.label)}（已核對）；每月尾計完假期先更新` : "未有假期結餘資料"}</p>
   <div class="bal">${balRows}<div class="brow tot"><span class="bn">合計</span><span class="bs"></span><span class="n">${total}</span></div></div>
   <p class="mates">撳個名睇佢上個月點計</p>
 </div>
+<div id="pay" hidden>
+  ${data.payroll ? `<p class="mates">${esc(data.payroll.month)}工資（${esc(data.payroll.source || "")}）；撳個名睇細項</p>
+  <div class="bal">${names.filter(n => data.payroll.detail[n]).map(n => `<details class="brow"><summary><span class="bn">${esc(n)}</span><span class="bs">${esc(data.home[n] || "頂班")}</span>
+    <span class="n">${money(data.payroll.detail[n].total)}</span></summary>${payTable(data, n)}</details>`).join("")}
+    <div class="brow tot"><span class="bn">合計</span><span class="bs"></span><span class="n">${money(names.reduce((s, n) => s + ((data.payroll.detail[n] || {}).total || 0), 0))}</span></div></div>` : `<p class="mates">未有工資資料</p>`}
+</div>
 <div id="person" hidden>
   ${tabs(names.map(n => ["p-" + n, esc(n)])).replace('class="tabs"', 'class="tabs names"')}
   ${names.map((n, i) => `<div id="p-${esc(n)}" ${i ? "hidden" : ""}>${myList(data, days, n)}</div>`).join("")}
 </div>
-<p class="note">呢條係老闆專用連結，睇到全部員工嘅更表同假期結餘，唔好轉發俾員工。</p>`);
+<p class="note">呢條係老闆專用連結，睇到全部員工嘅更表、假期結餘同工資，唔好轉發俾員工。</p>`);
 }
 
 export const goneHtml = `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex"><title>連結無效</title></head>
