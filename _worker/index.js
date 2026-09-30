@@ -30,7 +30,10 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/r/") && request.method === "GET") {
-      const code = url.pathname.slice(3);
+      // 手機 copy 連結有時會夾空格／換行／尾巴黐標點 → 清走非字母數字字元先認
+      let code = url.pathname.slice(3);
+      try { code = decodeURIComponent(code); } catch {}
+      code = code.replace(/[^A-Za-z0-9_-]/g, "");
       const data = /^[A-Za-z0-9_-]{16,64}$/.test(code) && await env.STATUS.get("roster", "json");
       const name = data && data.links[await sha256hex(code)];
       return name ? html(rosterPage(data, name, macauDate())) : html(goneHtml, 404);
