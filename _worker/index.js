@@ -34,7 +34,7 @@ export default {
       let code = url.pathname.slice(3);
       try { code = decodeURIComponent(code); } catch {}
       code = code.replace(/[^A-Za-z0-9_-]/g, "");
-      const data = /^[A-Za-z0-9_-]{16,64}$/.test(code) && await env.STATUS.get("roster", "json");
+      const data = /^[A-Za-z0-9_-]{8,64}$/.test(code) && await env.STATUS.get("roster", "json");
       const name = data && data.links[await sha256hex(code)];
       return name ? html(rosterPage(data, name, macauDate())) : html(goneHtml, 404);
     }
