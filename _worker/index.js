@@ -7,7 +7,7 @@
 // 其餘網址照出靜態檔（wrangler.jsonc 只將 /api/* 交畀呢個程式）
 import { rosterPage, goneHtml } from "./roster.js";
 
-const SHOPS = new Set(["um"]);            // 暫時得澳大店（SH06）
+const SHOPS = new Set(["um", "nanjing"]);  // 澳大店（SH06）、消防局店（SH04）
 const TZ_MS = 8 * 3600 * 1000;            // 澳門時間 UTC+8
 
 const macauDate = () => new Date(Date.now() + TZ_MS).toISOString().slice(0, 10);

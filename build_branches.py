@@ -71,7 +71,8 @@ BRANCHES = [
                  ("assets/img/branch/nanjing-street.jpg", "氹仔消防局店對面街望過去"),
                  ("assets/img/branch/nanjing-interior-1.jpg", "氹仔消防局店店內座位"),
                  ("assets/img/branch/nanjing-interior-2.jpg", "氹仔消防局店店內霓虹燈裝飾")],
-         kw="氹仔髮型屋,氹仔剪髮,消防局理髮,帝庭軒"),
+         kw="氹仔髮型屋,氹仔剪髮,消防局理髮,帝庭軒",
+         live="nanjing"),   # SH04 路由器偵測師傅返工 → 頁頂「已開門」
     dict(slug="um", en="University of Macau", area="澳門大學", name="澳門大學店",
          addr="澳門大學　大學大馬路薈萃坊商場 S8 座 2 樓 2011 室（超級市場對面）",
          schema_addr="大學大馬路薈萃坊商場S8座2樓2011室",
