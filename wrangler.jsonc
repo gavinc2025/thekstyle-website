@@ -13,8 +13,8 @@
   // 開門狀態；部署時自動開 KV namespace
   "kv_namespaces": [{ "binding": "STATUS" }],
   "vars": {
-    // 路由器用嘅 token 嘅 sha256（token 本身只存喺路由器同 ~/.config/salon/open-token）
-    "OPEN_TOKEN_SHA256": "f9b316636cc54f80c06ac62963004cf60f8f7a19b217626f38d12378d073e724",
+    // 路由器用嘅 token 嘅 sha256（可以逗號分隔多個，換 token 時新舊並存；token 本身只存喺路由器同 ~/.config/salon/open-token）
+    "OPEN_TOKEN_SHA256": "f9b316636cc54f80c06ac62963004cf60f8f7a19b217626f38d12378d073e724,11c01dd4af89c1fa3338e444c58cf7b4f5402250a60926859cf6bec5be43750e",
     // NAS 推更表用嘅 token 嘅 sha256（token 本身只存喺 NAS 同 ~/.config/salon/roster-push-token）
     "ROSTER_TOKEN_SHA256": "ca444e280d38e15bd8718b29e287c3e7d3853ba2b4d76762eca33e0f598da48d"
   }

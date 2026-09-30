@@ -57,7 +57,7 @@ export default {
 
     if (url.pathname === "/api/open" && request.method === "POST") {
       const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-      if (!token || (await sha256hex(token)) !== env.OPEN_TOKEN_SHA256) return json({ error: "auth" }, 401);
+      if (!token || !env.OPEN_TOKEN_SHA256.split(",").includes(await sha256hex(token))) return json({ error: "auth" }, 401);
       let body;
       try { body = await request.json(); } catch { return json({ error: "body" }, 400); }
       const { shop, time } = body || {};
