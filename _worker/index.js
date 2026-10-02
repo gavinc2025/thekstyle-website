@@ -1,6 +1,6 @@
 // 上手屋網站：靜態頁 + 細 API（分店「已開門」狀態）
 //   POST /api/open    路由器見到師傅手機 → 記低今日開門時間（每日第一次為準）
-//                     header: Authorization: Bearer <token>；body: {"shop":"um","time":"09:51"}（加 "dry":true 只測試唔寫）
+//                     header: Authorization: Bearer <token>；body: {"shop":"um","time":"09:51"}（加 "dry":true 只測試唔寫；"replace":true 更正當日）
 //   GET  /api/status?shop=um → {"date":"2026-09-27","open":"09:51"}（未開 = null）
 //   POST /api/roster  NAS 推員工更表（Bearer ROSTER token）→ KV "roster"
 //   GET  /r/<專屬碼>  員工更表頁（見 roster.js；唔俾 Google 收錄）
@@ -67,7 +67,7 @@ export default {
       if (!SHOPS.has(shop) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time || "")) return json({ error: "bad" }, 400);
       if (body.dry) return json({ ok: true, dry: true });   // 測試用：驗證 token/格式，唔寫入
       const key = `open:${shop}:${macauDate()}`;
-      const prev = await env.STATUS.get(key);
+      const prev = body.replace ? null : await env.STATUS.get(key);   // replace:true＝人手更正當日時間
       if (!prev) await env.STATUS.put(key, time, { expirationTtl: 60 * 60 * 24 * 40 });
       return json({ ok: true, open: prev || time, first: !prev });
     }
