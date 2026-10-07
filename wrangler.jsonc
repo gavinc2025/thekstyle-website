@@ -16,6 +16,8 @@
     // 路由器用嘅 token 嘅 sha256（可以逗號分隔多個，換 token 時新舊並存；token 本身只存喺路由器同 ~/.config/salon/open-token）
     "OPEN_TOKEN_SHA256": "11c01dd4af89c1fa3338e444c58cf7b4f5402250a60926859cf6bec5be43750e",
     // NAS 推更表用嘅 token 嘅 sha256（token 本身只存喺 NAS 同 ~/.config/salon/roster-push-token）
-    "ROSTER_TOKEN_SHA256": "ca444e280d38e15bd8718b29e287c3e7d3853ba2b4d76762eca33e0f598da48d"
+    "ROSTER_TOKEN_SHA256": "ca444e280d38e15bd8718b29e287c3e7d3853ba2b4d76762eca33e0f598da48d",
+    // 員工網頁報數：「1」＝開放（員工頁見到報數卡）；未開時淨係 /r/<碼>?test=1 測試模式用得
+    "REPORT_LIVE": "0"
   }
 }

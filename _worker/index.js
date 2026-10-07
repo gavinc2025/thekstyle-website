@@ -3,9 +3,11 @@
 //                     header: Authorization: Bearer <token>；body: {"shop":"um","time":"09:51"}（加 "dry":true 只測試唔寫；"replace":true 更正當日）
 //   GET  /api/status?shop=um → {"date":"2026-09-27","open":"09:51"}（未開 = null）
 //   POST /api/roster  NAS 推員工更表（Bearer ROSTER token）→ KV "roster"
-//   GET  /r/<專屬碼>  員工更表頁（見 roster.js；唔俾 Google 收錄）
+//   GET  /r/<專屬碼>  員工更表頁（見 roster.js；唔俾 Google 收錄）＋報數卡（?test=1 測試模式）
+//   POST /api/report  員工交數（body 帶專屬碼）；/api/reports、/api/report-ack、/api/report-purge 俾 NAS 用（見 report.js）
 // 其餘網址照出靜態檔（wrangler.jsonc 只將 /api/* 交畀呢個程式）
-import { rosterPage, goneHtml } from "./roster.js";
+import { rosterPage, goneHtml, BOSS } from "./roster.js";
+import { reportCard, reportState, postReport, nasApi } from "./report.js";
 
 const SHOPS = new Set(["um", "nanjing"]);  // 澳大店（SH06）、消防局店（SH04）
 const TZ_MS = 8 * 3600 * 1000;            // 澳門時間 UTC+8
@@ -36,9 +38,45 @@ export default {
       code = code.replace(/[^A-Za-z0-9_-]/g, "");
       const data = /^[A-Za-z0-9_-]{8,64}$/.test(code) && await env.STATUS.get("roster", "json");
       const name = data && data.links[await sha256hex(code)];
-      return name ? html(rosterPage(data, name, macauDate())) : html(goneHtml, 404);
+      if (!name) return html(goneHtml, 404);
+      const today = macauDate();
+      let extra = "";
+      // 報數卡（老闆頁冇）；?test=1＝測試模式，存 2099-12-31，唔入真數
+      // REPORT_LIVE 未開（10/12 上線前）：淨係 ?test=1 先見到報數卡
+      const test = url.searchParams.get("test") === "1";
+      if (name !== BOSS && (test || env.REPORT_LIVE === "1")) {
+        const hour = new Date(Date.now() + TZ_MS).getUTCHours();
+        extra = reportCard(data, name, today, await reportState(env, name, today, test), test, hour);
+      }
+      return html(rosterPage(data, name, today, extra));
     }
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
+
+    if (url.pathname === "/api/report" && request.method === "POST") {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "body" }, 400); }
+      const code = String((body && body.code) || "").replace(/[^A-Za-z0-9_-]/g, "");
+      const data = /^[A-Za-z0-9_-]{8,64}$/.test(code) && await env.STATUS.get("roster", "json");
+      const name = data && data.links[await sha256hex(code)];
+      if (!name || name === BOSS) return json({ error: "連結無效" }, 401);
+      if (env.REPORT_LIVE !== "1" && !body.test) return json({ error: "報數未開放" }, 403);
+      return postReport(request, env, data, name, macauDate(), body);
+    }
+
+    if (url.pathname.startsWith("/api/report")) {   // NAS 拉報數／標入數（Bearer roster token）
+      const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+      if (!token || (await sha256hex(token)) !== env.ROSTER_TOKEN_SHA256) return json({ error: "auth" }, 401);
+      const r = await nasApi(request, env, url);
+      if (r) return r;
+    }
+
+    if (url.pathname === "/api/roster" && request.method === "GET") {   // NAS 23:00 截數要知邊個應該返工
+      const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+      if (!token || (await sha256hex(token)) !== env.ROSTER_TOKEN_SHA256) return json({ error: "auth" }, 401);
+      const data = await env.STATUS.get("roster", "json");
+      const d = url.searchParams.get("date");
+      return json({ day: data && data.days.find(x => x.d === d) || null });
+    }
 
     if (url.pathname === "/api/roster" && request.method === "POST") {
       const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");

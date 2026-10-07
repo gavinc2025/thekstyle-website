@@ -2,6 +2,7 @@
 //   每個師傅一條專屬連結（唔使密碼），條連結本身就係身份；KV 只存專屬碼嘅 sha256。
 //   專屬碼對應「老闆」嘅就出老闆頁（全部人嘅更表 + 假期結餘）。
 //   資料由 NAS 更表推上嚟（POST /api/roster），見 ~/salon/salon_roster_push.py
+import { REPORT_CSS } from "./report.js";
 export const BOSS = "老闆";
 const WK = "日一二三四五六";
 const DAYS = 60;
@@ -150,13 +151,14 @@ tr.sub th,tr.sub td{font-size:.85rem;color:var(--muted)}.me{background:#fdf1c7;b
 .ld{background:#faf7ef;border-radius:10px;padding:10px 12px;margin:8px 0 10px}.ldt{font-weight:700;margin-bottom:4px}
 .ld th{width:7.5em;font-size:.88rem}.ld small{margin-left:4px}.ld td{font-size:.92rem}
 .note{font-size:.78rem;color:var(--muted);margin-top:16px}
+${REPORT_CSS}
 </style></head><body>
 <header><h1>${esc(title)}</h1><p>${sub}</p></header>
 <main>${body}</main>${TAB_JS}</body></html>`;
 
 const updated = data => `更新：${esc(data.updated.replace("T", " ").slice(0, 16))}`;
 
-export function rosterPage(data, name, today) {
+export function rosterPage(data, name, today, extra = "") {
   if (name === BOSS) return bossPage(data, today);
   const home = data.home[name] || null;
   const days = data.days.filter(d => d.d >= today).slice(0, DAYS);
@@ -170,6 +172,7 @@ export function rosterPage(data, name, today) {
   };
   return page(`上手屋更表 ‧ ${name}`, `${updated(data)}　${home ? `本店：${esc(home)}` : "頂班師傅"}`, `
 <div class="cards">${card(days[0], "今日")}${card(days[1], "明日")}</div>
+${extra}
 ${leaveCard(data, name, today)}
 ${payCard(data, name)}
 ${tabs([["mine", "我嘅更"], ["all", "全店更表"]])}
