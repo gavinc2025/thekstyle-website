@@ -85,7 +85,8 @@ export async function postReport(request, env, data, name, today, body) {
   const rec = {
     date, shop: body.shop, name, f, note: String(body.note || "").slice(0, 200), test,
     at: new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 19).replace("T", " "),
-    rev: (prev ? prev.rev : 0) + 1,
+    // rev＝時間戳（KV 有 cache，用 +1 會撞號）；n＝第幾次交，淨係顯示用
+    rev: Math.max(Date.now(), prev ? prev.rev + 1 : 0), n: (prev ? prev.n || 1 : 0) + 1,
   };
   const ttl = { expirationTtl: 60 * 60 * 24 * 45 };
   await env.STATUS.put(`rep:${date}:${key}`, JSON.stringify(rec), { ...ttl, metadata: { rev: rec.rev } });
@@ -93,7 +94,7 @@ export async function postReport(request, env, data, name, today, body) {
   idx[key] = rec.rev;
   await env.STATUS.put(`repidx:${date}`, JSON.stringify(idx), ttl);
   const mates = (await dayReports(env, date, body.shop)).filter(r => r.name !== name);
-  return json({ ok: true, rev: rec.rev, date, warns: checks(body.shop, rec, mates) });
+  return json({ ok: true, rev: rec.rev, n: rec.n, date, warns: checks(body.shop, rec, mates) });
 }
 
 // NAS 用（Bearer roster token）
@@ -208,7 +209,7 @@ $("r-send").onclick=async()=>{const s=$("r-shop").value,d=date(),al=(C.alone[d]|
     const j=await r.json();
     if(!r.ok)throw new Error(j.error||r.status);
     C.st[d+":"+s]=Object.assign(C.st[d+":"+s]||{},{mine:{f,note:$("f-note").value,at:new Date(Date.now()+288e5).toISOString().slice(0,19).replace("T"," "),ok:false}});load();
-    $("r-msg").innerHTML='<p class="rok">✅ 交咗（第 '+j.rev+' 次）'+s+'</p>'+(j.warns.length?'<p class="rerr">⚠️ 請核對：<br>'+j.warns.join("<br>")+'<br>有錯就改完再交；冇錯唔使理。</p>':"");
+    $("r-msg").innerHTML='<p class="rok">✅ 交咗（第 '+j.n+' 次）'+s+'</p>'+(j.warns.length?'<p class="rerr">⚠️ 請核對：<br>'+j.warns.join("<br>")+'<br>有錯就改完再交；冇錯唔使理。</p>':"");
   }catch(e){$("r-msg").innerHTML='<p class="rerr">交唔到：'+e.message+'<br>請再試，唔得就照舊打字俾老闆。</p>'}
   $("r-send").disabled=false;};
 })();
