@@ -9,3 +9,4 @@ desktop.ini
 # 臨時檔
 _shot.html
 *.tmp
+.wrangler/
