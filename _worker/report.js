@@ -24,7 +24,7 @@ const bare = n => n.replace(/[◆●]$/, "");
 // 核對（員工交數時即刻睇；NAS 入數時再用全舖資料核一次）
 export function checks(shop, r, mates = []) {
   const f = r.f, w = [], pr = price(shop);
-  if (f.t != null && f.p > f.t) w.push(`個人 ${f.p} 多過全店 ${f.t}`);
+  if (f.t != null && f.p > f.t) w.push(`個人 ${f.p} 多過全店單剪客流 ${f.t}`);
   if (f.p > 80) w.push(`個人 ${f.p} 剪好多，請再睇吓`);
   if (f.mp != null && f.t != null) {
     const nrm = f.normal || 0;
@@ -35,7 +35,7 @@ export function checks(shop, r, mates = []) {
   const t = f.t != null ? f.t : (mates.find(m => m.f.t != null) || {}).f?.t;
   if (t != null && mates.length) {
     const sum = f.p + mates.reduce((s, m) => s + m.f.p, 0);
-    if (sum > t) w.push(`同事加埋個人 ${sum} 多過全店 ${t}`);
+    if (sum > t) w.push(`同事加埋個人 ${sum} 多過全店單剪客流 ${t}`);
   }
   return w;
 }
@@ -224,7 +224,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   <div id="r-status" class="mates"></div>
   ${num("p", "個人單剪", "（必填）")}
   <div class="rsec" id="shopsec"><div class="rsh">全店數 <small id="shopnote"></small></div>
-    ${num("t", "全店客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數", "（冇就唔使填）")}${num("icbc", "工銀剪數", "（冇就唔使填）")}${num("card", "消卡剪數", "（冇就唔使填）")}${num("normal", "正常收費剪數", "（$60 嗰啲；冇就唔使填）")}
+    ${num("t", "全店單剪客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數", "（冇就唔使填）")}${num("icbc", "工銀剪數", "（冇就唔使填）")}${num("card", "消卡剪數", "（冇就唔使填）")}${num("normal", "正常收費剪數", "（$60 嗰啲；冇就唔使填）")}
   </div>
   ${num("big", "大頭工銀 $", "（冇就唔使填）")}${num("tip", "小費 $", "（冇就唔使填）")}
   <div class="rsec"><div class="rsh">單據相</div>
