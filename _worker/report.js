@@ -253,7 +253,7 @@ function thumbs(k){const m=((C.st[date()+":"+$("r-shop").value]||{}).mine||{}).p
   $("pt-"+k).innerHTML=P[k].map((u,i)=>'<span class="th"><img src="'+u+'"><b data-k="'+k+'" data-i="'+i+'">✕</b></span>').join("");
   $("ps-"+k).textContent=P[k].length?"已影 "+P[k].length+" 張，撳「交數」一齊上載"+(m[k]?"（會換走之前 "+m[k].n+" 張）":""):m[k]?"✅ 已上載 "+m[k].n+" 張（再揀就換過）":"";}
 document.querySelectorAll(".phrow input[type=file]").forEach(inp=>inp.onchange=async()=>{const k=inp.dataset.k,fs=[...inp.files];inp.value="";
-  $("ps-"+k).textContent="處理緊相…";
+  $("ps-"+k).textContent="處理緊相…";$("r-msg").innerHTML="";
   for(const f of fs){if(P[k].length>=3){$("r-msg").innerHTML='<p class="rerr">每類最多 3 張，撳相上面 ✕ 刪咗先再影</p>';break}try{P[k].push(await shrink(f))}catch(e){$("r-msg").innerHTML='<p class="rerr">'+e.message+'</p>'}}thumbs(k)});
 document.querySelectorAll(".thumbs").forEach(t=>t.onclick=e=>{const b=e.target.closest("b");if(!b)return;P[b.dataset.k].splice(+b.dataset.i,1);thumbs(b.dataset.k)});
 function load(){const d=date(),s=$("r-shop").value,k=d+":"+s,x=C.st[k]||{},al=(C.alone[d]||{})[s]!==false;
