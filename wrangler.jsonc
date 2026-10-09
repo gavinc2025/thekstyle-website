@@ -19,7 +19,7 @@
     "ROSTER_TOKEN_SHA256": "ca444e280d38e15bd8718b29e287c3e7d3853ba2b4d76762eca33e0f598da48d",
     // 員工網頁報數：「1」＝開放（員工頁見到報數卡）；未開時淨係 /r/<碼>?test=1 測試模式用得
     "REPORT_LIVE": "1",
-    // 單據相（澳門通／大頭工銀）：「1」＝有填金額就一定要上載；而家自選
-    "REPORT_PHOTO_REQUIRED": "0"
+    // 澳門通單據：「1」＝有填澳門通金額（>0）就一定要影（用戶 10/10 定）；大頭工銀一律必須（寫死喺 report.js）
+    "REPORT_PHOTO_REQUIRED": "1"
   }
 }

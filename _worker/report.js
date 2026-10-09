@@ -110,7 +110,7 @@ export async function postReport(request, env, data, name, today, body) {
   // 大頭工銀一定要單據（工銀機冇 CSV，老闆靠相對數；用戶 10/9 定）
   if (f.big > 0 && !ph.big) return json({ error: "大頭工銀要影單據先交到" }, 400);
   // 澳門通單據：REPORT_PHOTO_REQUIRED="1" 先必須（而家自選）
-  if (env.REPORT_PHOTO_REQUIRED === "1" && f.mp != null && !ph.mp) return json({ error: "澳門通要影單據先交到" }, 400);
+  if (env.REPORT_PHOTO_REQUIRED === "1" && f.mp > 0 && !ph.mp) return json({ error: "澳門通要影單據先交到" }, 400);
   const rec = {
     date, shop: body.shop, name, f, note: String(body.note || "").slice(0, 200), test,
     at: new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 19).replace("T", " "),
@@ -228,7 +228,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   </div>
   ${num("big", "大頭工銀 $", "（冇就唔使填）")}${num("tip", "小費 $", "（冇就唔使填）")}
   <div class="rsec"><div class="rsh">單據相</div>
-    ${[["mp", "澳門通單據", photoReq ? "（有填澳門通就要影）" : "（可以唔影）"], ["big", "大頭工銀單據", "（有填大頭工銀就一定要影）"]].map(([k, lab, hint]) => `<div class="phrow" id="pw-${k}">
+    ${[["mp", "澳門通單據", photoReq ? "（有填澳門通就一定要影）" : "（可以唔影）"], ["big", "大頭工銀單據", "（有填大頭工銀就一定要影）"]].map(([k, lab, hint]) => `<div class="phrow" id="pw-${k}">
       <label class="phbig">📷 影${lab}<input type="file" accept="image/*" capture="environment" data-k="${k}"></label>
       <div class="phsub"><small>${hint}　最多 ${PHOTO_MAX[k]} 張</small><label class="phalt">或者揀相<input type="file" accept="image/*" multiple data-k="${k}"></label></div>
       <div class="phst" id="ps-${k}"></div><div class="thumbs" id="pt-${k}"></div></div>`).join("")}
@@ -270,7 +270,7 @@ $("r-send").onclick=async()=>{const s=$("r-shop").value,d=date(),al=(C.alone[d]|
   if(al&&f.t==null)f.t=f.p;
   const m0=((C.st[d+":"+s]||{}).mine||{}).ph||{};
   if(s==="海上居"&&f.big>0&&!P.big.length&&!m0.big){$("r-msg").innerHTML='<p class="rerr big">大頭工銀要影單據先交到</p>';$("pw-big").scrollIntoView({block:"center"});return}
-  if(C.photoReq&&f.mp!=null&&!P.mp.length&&!m0.mp){$("r-msg").innerHTML='<p class="rerr big">澳門通要影單據先交到</p>';return}
+  if(C.photoReq&&f.mp>0&&!P.mp.length&&!m0.mp){$("r-msg").innerHTML='<p class="rerr big">澳門通要影單據先交到</p>';return}
   const photos={};["mp","big"].forEach(k=>{if(P[k].length)photos[k]=P[k]});
   $("r-send").disabled=true;$("r-msg").textContent=Object.keys(photos).length?"交緊（連相上載，可能要幾秒）…":"交緊…";
   try{const code=location.pathname.split("/")[2];
