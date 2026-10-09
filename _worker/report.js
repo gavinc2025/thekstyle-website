@@ -10,6 +10,8 @@ export const price = shop => PRICE[shop] || 60;
 // 欄：個人單剪必填；其餘留空＝冇
 const F = ["p", "t", "mp", "cash", "icbc", "card", "tip", "big", "normal"];
 const SHOP_F = ["t", "mp", "cash", "icbc", "card", "normal"];   // 全店數：同舖多人時只需一個人填
+const PHOTO_KINDS = ["mp", "big"];   // 單據相：澳門通、大頭工銀（海上居）
+export const photoKey = (date, key, kind, rev, i) => `photo:${date}:${key}:${kind}:${rev}:${i}`;
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
@@ -53,7 +55,7 @@ export async function reportState(env, name, today, test) {
     for (const r of reps) {
       const k = `${d}:${r.shop}`, a = (ack || {})[`${r.shop}:${r.name}`];
       st[k] = st[k] || { mine: null, shopBy: null, shopF: null };
-      if (r.name === name) st[k].mine = { f: r.f, note: r.note || "", at: r.at, rev: r.rev, ok: !!(a && a.rev === r.rev), rid: a && a.rid };
+      if (r.name === name) st[k].mine = { f: r.f, note: r.note || "", at: r.at, rev: r.rev, ph: r.ph || {}, ok: !!(a && a.rev === r.rev), rid: a && a.rid };
       else if (SHOP_F.some(x => r.f[x] != null) && (!st[k].shopAt || r.at > st[k].shopAt)) {
         st[k].shopBy = r.name; st[k].shopAt = r.at; st[k].shopF = Object.fromEntries(SHOP_F.map(x => [x, r.f[x]]));
       }
@@ -82,13 +84,43 @@ export async function postReport(request, env, data, name, today, body) {
   if (body.shop !== "澳門大學") f.normal = null;
   const key = `${body.shop}:${name}`;
   const prev = await env.STATUS.get(`rep:${date}:${key}`, "json");
+  // 單據相（自選）：body.photos {mp:[base64 jpeg..], big:[..]}，每類 1–3 張；冇帶就沿用上次交嗰批
+  const photos = {};
+  for (const kind of PHOTO_KINDS) {
+    const arr = body.photos && body.photos[kind];
+    if (!Array.isArray(arr) || !arr.length) continue;
+    if (arr.length > 3) return json({ error: "每類單據最多 3 張相" }, 400);
+    const bins = [];
+    for (const b64 of arr) {
+      let bin;
+      try { bin = Uint8Array.from(atob(String(b64).replace(/^data:image\/jpeg;base64,/, "")), c => c.charCodeAt(0)); }
+      catch { return json({ error: "相片格式唔啱" }, 400); }
+      if (bin.length > 1.5e6 || bin[0] !== 0xff || bin[1] !== 0xd8) return json({ error: "相片太大或者格式唔啱" }, 400);
+      bins.push(bin);
+    }
+    photos[kind] = bins;
+  }
+  const rev = Math.max(Date.now(), prev ? prev.rev + 1 : 0);
+  const ph = {};
+  for (const kind of PHOTO_KINDS) {
+    if (photos[kind]) ph[kind] = { rev, n: photos[kind].length };
+    else if (prev && prev.ph && prev.ph[kind]) ph[kind] = prev.ph[kind];
+  }
+  if (body.shop !== "海上居") delete ph.big;
+  if (env.REPORT_PHOTO_REQUIRED === "1") {   // 要必須上載單據就將 wrangler.jsonc 呢個 var 改 "1"
+    if (f.mp != null && !ph.mp) return json({ error: "請上載澳門通單據相" }, 400);
+    if (f.big != null && !ph.big) return json({ error: "請上載大頭工銀單據相" }, 400);
+  }
   const rec = {
     date, shop: body.shop, name, f, note: String(body.note || "").slice(0, 200), test,
     at: new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 19).replace("T", " "),
     // rev＝時間戳（KV 有 cache，用 +1 會撞號）；n＝第幾次交，淨係顯示用
-    rev: Math.max(Date.now(), prev ? prev.rev + 1 : 0), n: (prev ? prev.n || 1 : 0) + 1,
+    rev, n: (prev ? prev.n || 1 : 0) + 1, ph,
   };
   const ttl = { expirationTtl: 60 * 60 * 24 * 45 };
+  // 相先存（14 日 TTL；NAS 拉落去之後即刪）
+  for (const [kind, bins] of Object.entries(photos))
+    await Promise.all(bins.map((b, i) => env.STATUS.put(photoKey(date, key, kind, rev, i + 1), b, { expirationTtl: 60 * 60 * 24 * 14 })));
   await env.STATUS.put(`rep:${date}:${key}`, JSON.stringify(rec), { ...ttl, metadata: { rev: rec.rev } });
   const idx = (await env.STATUS.get(`repidx:${date}`, "json")) || {};
   idx[key] = rec.rev;
@@ -102,7 +134,8 @@ export async function postReport(request, env, data, name, today, body) {
 //   GET  /api/reports?date=D&keys=a,b   → {date, reports:[...]}
 //   GET  /api/reports?date=D&sweep=1    → {date, idx}（用 KV list 補返 index 甩咗嘅）
 //   POST /api/report-ack {date, acks:{key:{rid,rev}}}
-//   POST /api/report-purge {date: 2099-12-31}  淨係刪得測試日
+//   GET  /api/report-photo?key=photo:..  → jpeg；POST /api/report-photo-del {keys:[..]}
+//   POST /api/report-purge {date: 2099-12-31}  淨係刪得測試日（連相）
 export async function nasApi(request, env, url) {
   if (url.pathname === "/api/reports" && request.method === "GET") {
     const date = url.searchParams.get("date") || "";
@@ -132,20 +165,33 @@ export async function nasApi(request, env, url) {
     await env.STATUS.put(`repack:${b.date}`, JSON.stringify(cur), { expirationTtl: 60 * 60 * 24 * 45 });
     return json({ ok: true, n: Object.keys(cur).length });
   }
+  if (url.pathname === "/api/report-photo" && request.method === "GET") {   // NAS 拉相（binary）
+    const k = url.searchParams.get("key") || "";
+    if (!k.startsWith("photo:")) return json({ error: "key" }, 400);
+    const v = await env.STATUS.get(k, "arrayBuffer");
+    return v ? new Response(v, { headers: { "content-type": "image/jpeg", "cache-control": "no-store" } }) : json({ error: "gone" }, 404);
+  }
+  if (url.pathname === "/api/report-photo-del" && request.method === "POST") {   // NAS 存好就刪
+    const b = await request.json().catch(() => null);
+    const keys = ((b && b.keys) || []).filter(k => typeof k === "string" && k.startsWith("photo:")).slice(0, 50);
+    await Promise.all(keys.map(k => env.STATUS.delete(k)));
+    return json({ ok: true, deleted: keys.length });
+  }
   if (url.pathname === "/api/report-purge" && request.method === "POST") {
     const b = await request.json().catch(() => null);
     if (!b || b.date !== TEST_DATE) return json({ error: "只可以刪測試日" }, 400);
     const r = await env.STATUS.list({ prefix: `rep:${TEST_DATE}:` });
-    await Promise.all(r.keys.map(k => env.STATUS.delete(k.name)));
+    const p = await env.STATUS.list({ prefix: `photo:${TEST_DATE}:` });
+    await Promise.all([...r.keys, ...p.keys].map(k => env.STATUS.delete(k.name)));
     await env.STATUS.delete(`repidx:${TEST_DATE}`);
     await env.STATUS.delete(`repack:${TEST_DATE}`);
-    return json({ ok: true, deleted: r.keys.length });
+    return json({ ok: true, deleted: r.keys.length, photos: p.keys.length });
   }
   return null;
 }
 
 // 員工頁「報數」卡（server 出 HTML，表單用 fetch 交）
-export function reportCard(data, name, today, st, test, hour) {
+export function reportCard(data, name, today, st, test, hour, photoReq = false) {
   const dayOf = d => data.days.find(x => x.d === d);
   const myShop = d => {
     const day = dayOf(d);
@@ -162,7 +208,7 @@ export function reportCard(data, name, today, st, test, hour) {
   const yest = addDays(today, -1);
   const defDate = test ? TEST_DATE : (hour < 5 ? yest : today);
   const cfg = {
-    test, today, yest, name, defDate, shops: data.shops, st,
+    test, today, yest, name, defDate, shops: data.shops, st, photoReq,
     def: { [today]: myShop(today), [yest]: myShop(yest), [TEST_DATE]: myShop(today) },
     alone: { [today]: alone(today), [yest]: alone(yest), [TEST_DATE]: alone(today) },
     price: Object.fromEntries(data.shops.map(s => [s, price(s)])),
@@ -181,6 +227,11 @@ export function reportCard(data, name, today, st, test, hour) {
     ${num("t", "全店客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數")}${num("icbc", "工銀剪數")}${num("card", "消卡剪數")}${num("normal", "正常收費剪數", "（$60 嗰啲）")}
   </div>
   ${num("big", "大頭工銀 $")}${num("tip", "小費 $")}
+  <div class="rsec"><div class="rsh">單據相 <small>${photoReq ? "（有填金額就要上載）" : "（可以唔上載）"}每類最多 3 張</small></div>
+    ${[["mp", "澳門通單據"], ["big", "大頭工銀單據"]].map(([k, lab]) => `<div class="phrow" id="pw-${k}">
+      <label class="phbtn">📷 ${lab}<input type="file" accept="image/*" multiple data-k="${k}"></label>
+      <span class="mates" id="ps-${k}"></span><div class="thumbs" id="pt-${k}"></div></div>`).join("")}
+  </div>
   <label class="rf"><span>備註</span><input id="f-note" type="text" maxlength="200" placeholder="可以唔填"></label>
   <button id="r-send" class="rbtn">交數</button>
   <div id="r-msg"></div>
@@ -192,23 +243,41 @@ const $=id=>document.getElementById(id),F=["p","t","mp","cash","icbc","card","ti
 const date=()=>C.test?"${TEST_DATE}":$("r-date").value;
 if(!C.test)$("r-date").value=C.defDate;
 const ds=C.def[date()];if(ds)$("r-shop").value=ds;
+const P={mp:[],big:[]};
+async function shrink(file){const u=URL.createObjectURL(file);try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error("開唔到張相"));i.src=u});
+  let L=1600,q=0.7,out;for(let t=0;t<5;t++){const z=Math.min(1,L/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement("canvas");
+    c.width=Math.round(img.naturalWidth*z);c.height=Math.round(img.naturalHeight*z);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    out=c.toDataURL("image/jpeg",q);if(out.length*0.75<4e5)break;if(q>0.5)q-=0.1;else L=Math.round(L*0.8)}return out}finally{URL.revokeObjectURL(u)}}
+function thumbs(k){const m=((C.st[date()+":"+$("r-shop").value]||{}).mine||{}).ph||{};
+  $("pt-"+k).innerHTML=P[k].map((u,i)=>'<span class="th"><img src="'+u+'"><b data-k="'+k+'" data-i="'+i+'">✕</b></span>').join("");
+  $("ps-"+k).textContent=P[k].length?"揀咗 "+P[k].length+" 張，交數時一齊上載"+(m[k]?"（會換走之前 "+m[k].n+" 張）":""):m[k]?"✅ 已上載 "+m[k].n+" 張（再揀就換過）":"";}
+document.querySelectorAll(".phrow input").forEach(inp=>inp.onchange=async()=>{const k=inp.dataset.k,fs=[...inp.files];inp.value="";
+  $("ps-"+k).textContent="處理緊相…";
+  for(const f of fs){if(P[k].length>=3){alert("每類最多 3 張");break}try{P[k].push(await shrink(f))}catch(e){$("r-msg").innerHTML='<p class="rerr">'+e.message+'</p>'}}thumbs(k)});
+document.querySelectorAll(".thumbs").forEach(t=>t.onclick=e=>{const b=e.target.closest("b");if(!b)return;P[b.dataset.k].splice(+b.dataset.i,1);thumbs(b.dataset.k)});
 function load(){const d=date(),s=$("r-shop").value,k=d+":"+s,x=C.st[k]||{},al=(C.alone[d]||{})[s]!==false;
+  P.mp=[];P.big=[];$("pw-big").hidden=s!=="海上居";
   $("w-big").hidden=s!=="海上居";$("w-normal").hidden=s!=="澳門大學";$("w-t").hidden=al;
   $("shopnote").textContent=al?"（得你一個，照填）":x.shopBy&&!(x.mine&&SF.some(f=>x.mine.f[f]!=null))?"（"+x.shopBy+" 已經填咗，唔使再填）":"（同舖多過一個人，只需一位同事填）";
   const m=x.mine;F.forEach(f=>$("f-"+f).value=m&&m.f[f]!=null?m.f[f]:"");$("f-note").value=m?m.note:"";
   $("r-status").innerHTML=m?(m.ok?"✅ 已入數（"+m.at.slice(11,16)+" 交）":"⏳ 已交（"+m.at.slice(11,16)+"），等入數")+"　可以改":(x.shopBy?x.shopBy+" 已交全店數：客流 "+(x.shopF.t??"-")+"、澳門通 $"+(x.shopF.mp??"-"):"未交");
-  $("r-msg").innerHTML="";}
+  $("r-msg").innerHTML="";thumbs("mp");thumbs("big");}
 $("r-shop").onchange=load;if(!C.test)$("r-date").onchange=()=>{const d=C.def[date()];if(d)$("r-shop").value=d;load()};load();
 $("r-send").onclick=async()=>{const s=$("r-shop").value,d=date(),al=(C.alone[d]||{})[s]!==false,f={};
   F.forEach(k=>{const v=$("f-"+k).value.trim();f[k]=v===""?null:+v});
   if(f.p==null){$("r-msg").innerHTML='<p class="rerr">個人單剪一定要填</p>';return}
   if(al&&f.t==null)f.t=f.p;
-  $("r-send").disabled=true;$("r-msg").textContent="交緊…";
+  const m0=((C.st[d+":"+s]||{}).mine||{}).ph||{};
+  if(C.photoReq){if(f.mp!=null&&!P.mp.length&&!m0.mp){$("r-msg").innerHTML='<p class="rerr">請上載澳門通單據相</p>';return}
+    if(f.big!=null&&!P.big.length&&!m0.big){$("r-msg").innerHTML='<p class="rerr">請上載大頭工銀單據相</p>';return}}
+  const photos={};["mp","big"].forEach(k=>{if(P[k].length)photos[k]=P[k]});
+  $("r-send").disabled=true;$("r-msg").textContent=Object.keys(photos).length?"交緊（連相上載，可能要幾秒）…":"交緊…";
   try{const code=location.pathname.split("/")[2];
-    const r=await fetch("/api/report",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({code,date:d,shop:s,f,note:$("f-note").value,test:C.test})});
+    const r=await fetch("/api/report",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({code,date:d,shop:s,f,note:$("f-note").value,test:C.test,photos})});
     const j=await r.json();
     if(!r.ok)throw new Error(j.error||r.status);
-    C.st[d+":"+s]=Object.assign(C.st[d+":"+s]||{},{mine:{f,note:$("f-note").value,at:new Date(Date.now()+288e5).toISOString().slice(0,19).replace("T"," "),ok:false}});load();
+    const ph=Object.assign({},m0);["mp","big"].forEach(k=>{if(P[k].length)ph[k]={n:P[k].length}});
+    C.st[d+":"+s]=Object.assign(C.st[d+":"+s]||{},{mine:{f,note:$("f-note").value,ph,at:new Date(Date.now()+288e5).toISOString().slice(0,19).replace("T"," "),ok:false}});load();
     $("r-msg").innerHTML='<p class="rok">✅ 交咗（第 '+j.n+' 次）'+s+'</p>'+(j.warns.length?'<p class="rerr">⚠️ 請核對：<br>'+j.warns.join("<br>")+'<br>有錯就改完再交；冇錯唔使理。</p>':"");
   }catch(e){$("r-msg").innerHTML='<p class="rerr">交唔到：'+e.message+'<br>請再試，唔得就照舊打字俾老闆。</p>'}
   $("r-send").disabled=false;};
@@ -224,4 +293,9 @@ export const REPORT_CSS = `
 .rf input[type=text]{width:12em;text-align:left;font-size:.95rem}
 .rsec{background:#faf7ef;border-radius:10px;padding:4px 10px;margin:8px 0}.rsh{font-weight:600;padding-top:4px}.rsh small{font-weight:400;color:var(--muted)}
 .rbtn{width:100%;margin-top:12px;padding:12px;font-size:1.1rem;border:0;border-radius:10px;background:var(--teal);color:#fff}
-.rf[hidden]{display:none}.rbtn:disabled{opacity:.5}.rok{color:var(--deep);font-weight:600}.rerr{color:#c0562b}`;
+.rf[hidden]{display:none}.phrow{padding:6px 0;border-bottom:1px solid #f0eee8}.phrow[hidden]{display:none}
+.phbtn{display:inline-block;padding:8px 12px;border:1px solid var(--teal);border-radius:8px;color:var(--teal);background:#fff;font-size:.95rem}
+.phbtn input{display:none}.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.th{position:relative}
+.th img{width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
+.th b{position:absolute;top:-6px;right:-6px;background:#c0562b;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;text-align:center;cursor:pointer}
+.rbtn:disabled{opacity:.5}.rok{color:var(--deep);font-weight:600}.rerr{color:#c0562b}`;

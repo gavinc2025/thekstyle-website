@@ -46,7 +46,7 @@ export default {
       const test = url.searchParams.get("test") === "1";
       if (name !== BOSS && (test || env.REPORT_LIVE === "1")) {
         const hour = new Date(Date.now() + TZ_MS).getUTCHours();
-        extra = reportCard(data, name, today, await reportState(env, name, today, test), test, hour);
+        extra = reportCard(data, name, today, await reportState(env, name, today, test), test, hour, env.REPORT_PHOTO_REQUIRED === "1");
       }
       return html(rosterPage(data, name, today, extra));
     }
