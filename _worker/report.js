@@ -11,6 +11,7 @@ export const price = shop => PRICE[shop] || 60;
 const F = ["p", "t", "mp", "cash", "icbc", "card", "tip", "big", "normal"];
 const SHOP_F = ["t", "mp", "cash", "icbc", "card", "normal"];   // 全店數：同舖多人時只需一個人填
 const PHOTO_KINDS = ["mp", "big"];   // 單據相：澳門通、大頭工銀（海上居）
+const PHOTO_MAX = { mp: 3, big: 10 };   // 每類最多幾張（用戶 10/9：大頭工銀 10 張）；TG 一組最多 10 張，每類分開發
 export const photoKey = (date, key, kind, rev, i) => `photo:${date}:${key}:${kind}:${rev}:${i}`;
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -89,14 +90,13 @@ export async function postReport(request, env, data, name, today, body) {
   for (const kind of PHOTO_KINDS) {
     const arr = body.photos && body.photos[kind];
     if (!Array.isArray(arr) || !arr.length) continue;
-    if (arr.length > 3) return json({ error: "每類單據最多 3 張相" }, 400);
+    if (arr.length > PHOTO_MAX[kind]) return json({ error: `${kind === "big" ? "大頭工銀" : "澳門通"}單據最多 ${PHOTO_MAX[kind]} 張相` }, 400);
+    // 唔喺 Worker 解 base64（慳 CPU）：照存 base64 字串，NAS 先解；JPEG base64 一定 "/9j/" 開頭
     const bins = [];
     for (const b64 of arr) {
-      let bin;
-      try { bin = Uint8Array.from(atob(String(b64).replace(/^data:image\/jpeg;base64,/, "")), c => c.charCodeAt(0)); }
-      catch { return json({ error: "相片格式唔啱" }, 400); }
-      if (bin.length > 1.5e6 || bin[0] !== 0xff || bin[1] !== 0xd8) return json({ error: "相片太大或者格式唔啱" }, 400);
-      bins.push(bin);
+      const t = String(b64).replace(/^data:image\/jpeg;base64,/, "");
+      if (!t.startsWith("/9j/") || t.length > 2e6 || !/^[A-Za-z0-9+/=]+$/.test(t.slice(-64))) return json({ error: "相片太大或者格式唔啱" }, 400);
+      bins.push(t);
     }
     photos[kind] = bins;
   }
@@ -168,8 +168,8 @@ export async function nasApi(request, env, url) {
   if (url.pathname === "/api/report-photo" && request.method === "GET") {   // NAS 拉相（binary）
     const k = url.searchParams.get("key") || "";
     if (!k.startsWith("photo:")) return json({ error: "key" }, 400);
-    const v = await env.STATUS.get(k, "arrayBuffer");
-    return v ? new Response(v, { headers: { "content-type": "image/jpeg", "cache-control": "no-store" } }) : json({ error: "gone" }, 404);
+    const v = await env.STATUS.get(k);   // base64 字串（NAS 解碼）
+    return v ? new Response(v, { headers: { "content-type": "text/plain", "cache-control": "no-store" } }) : json({ error: "gone" }, 404);
   }
   if (url.pathname === "/api/report-photo-del" && request.method === "POST") {   // NAS 存好就刪
     const b = await request.json().catch(() => null);
@@ -208,7 +208,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   const yest = addDays(today, -1);
   const defDate = test ? TEST_DATE : (hour < 5 ? yest : today);
   const cfg = {
-    test, today, yest, name, defDate, shops: data.shops, st, photoReq,
+    test, today, yest, name, defDate, shops: data.shops, st, photoReq, max: PHOTO_MAX,
     def: { [today]: myShop(today), [yest]: myShop(yest), [TEST_DATE]: myShop(today) },
     alone: { [today]: alone(today), [yest]: alone(yest), [TEST_DATE]: alone(today) },
     price: Object.fromEntries(data.shops.map(s => [s, price(s)])),
@@ -230,7 +230,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   <div class="rsec"><div class="rsh">單據相</div>
     ${[["mp", "澳門通單據", photoReq ? "（有填澳門通就要影）" : "（可以唔影）"], ["big", "大頭工銀單據", "（有填大頭工銀就一定要影）"]].map(([k, lab, hint]) => `<div class="phrow" id="pw-${k}">
       <label class="phbig">📷 影${lab}<input type="file" accept="image/*" capture="environment" data-k="${k}"></label>
-      <div class="phsub"><small>${hint}　最多 3 張</small><label class="phalt">或者揀相<input type="file" accept="image/*" multiple data-k="${k}"></label></div>
+      <div class="phsub"><small>${hint}　最多 ${PHOTO_MAX[k]} 張</small><label class="phalt">或者揀相<input type="file" accept="image/*" multiple data-k="${k}"></label></div>
       <div class="phst" id="ps-${k}"></div><div class="thumbs" id="pt-${k}"></div></div>`).join("")}
   </div>
   <label class="rf"><span>備註</span><input id="f-note" type="text" maxlength="200" placeholder="可以唔填"></label>
@@ -254,7 +254,7 @@ function thumbs(k){const m=((C.st[date()+":"+$("r-shop").value]||{}).mine||{}).p
   $("ps-"+k).textContent=P[k].length?"已影 "+P[k].length+" 張，撳「交數」一齊上載"+(m[k]?"（會換走之前 "+m[k].n+" 張）":""):m[k]?"✅ 已上載 "+m[k].n+" 張（再揀就換過）":"";}
 document.querySelectorAll(".phrow input[type=file]").forEach(inp=>inp.onchange=async()=>{const k=inp.dataset.k,fs=[...inp.files];inp.value="";
   $("ps-"+k).textContent="處理緊相…";$("r-msg").innerHTML="";
-  for(const f of fs){if(P[k].length>=3){$("r-msg").innerHTML='<p class="rerr">每類最多 3 張，撳相上面 ✕ 刪咗先再影</p>';break}try{P[k].push(await shrink(f))}catch(e){$("r-msg").innerHTML='<p class="rerr">'+e.message+'</p>'}}thumbs(k)});
+  for(const f of fs){if(P[k].length>=C.max[k]){$("r-msg").innerHTML='<p class="rerr">呢類最多 '+C.max[k]+' 張，撳相上面 ✕ 刪咗先再影</p>';break}try{P[k].push(await shrink(f))}catch(e){$("r-msg").innerHTML='<p class="rerr">'+e.message+'</p>'}}thumbs(k)});
 document.querySelectorAll(".thumbs").forEach(t=>t.onclick=e=>{const b=e.target.closest("b");if(!b)return;P[b.dataset.k].splice(+b.dataset.i,1);thumbs(b.dataset.k)});
 function load(){const d=date(),s=$("r-shop").value,k=d+":"+s,x=C.st[k]||{},al=(C.alone[d]||{})[s]!==false;
   P.mp=[];P.big=[];$("pw-big").hidden=s!=="海上居";
