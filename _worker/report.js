@@ -107,10 +107,10 @@ export async function postReport(request, env, data, name, today, body) {
     else if (prev && prev.ph && prev.ph[kind]) ph[kind] = prev.ph[kind];
   }
   if (body.shop !== "海上居") delete ph.big;
-  if (env.REPORT_PHOTO_REQUIRED === "1") {   // 要必須上載單據就將 wrangler.jsonc 呢個 var 改 "1"
-    if (f.mp != null && !ph.mp) return json({ error: "請上載澳門通單據相" }, 400);
-    if (f.big != null && !ph.big) return json({ error: "請上載大頭工銀單據相" }, 400);
-  }
+  // 大頭工銀一定要單據（工銀機冇 CSV，老闆靠相對數；用戶 10/9 定）
+  if (f.big > 0 && !ph.big) return json({ error: "大頭工銀要影單據先交到" }, 400);
+  // 澳門通單據：REPORT_PHOTO_REQUIRED="1" 先必須（而家自選）
+  if (env.REPORT_PHOTO_REQUIRED === "1" && f.mp != null && !ph.mp) return json({ error: "澳門通要影單據先交到" }, 400);
   const rec = {
     date, shop: body.shop, name, f, note: String(body.note || "").slice(0, 200), test,
     at: new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 19).replace("T", " "),
@@ -227,10 +227,11 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
     ${num("t", "全店客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數")}${num("icbc", "工銀剪數")}${num("card", "消卡剪數")}${num("normal", "正常收費剪數", "（$60 嗰啲）")}
   </div>
   ${num("big", "大頭工銀 $")}${num("tip", "小費 $")}
-  <div class="rsec"><div class="rsh">單據相 <small>${photoReq ? "（有填金額就要上載）" : "（可以唔上載）"}每類最多 3 張</small></div>
-    ${[["mp", "澳門通單據"], ["big", "大頭工銀單據"]].map(([k, lab]) => `<div class="phrow" id="pw-${k}">
-      <label class="phbtn">📷 ${lab}<input type="file" accept="image/*" multiple data-k="${k}"></label>
-      <span class="mates" id="ps-${k}"></span><div class="thumbs" id="pt-${k}"></div></div>`).join("")}
+  <div class="rsec"><div class="rsh">單據相</div>
+    ${[["mp", "澳門通單據", photoReq ? "（有填澳門通就要影）" : "（可以唔影）"], ["big", "大頭工銀單據", "（有填大頭工銀就一定要影）"]].map(([k, lab, hint]) => `<div class="phrow" id="pw-${k}">
+      <label class="phbig">📷 影${lab}<input type="file" accept="image/*" capture="environment" data-k="${k}"></label>
+      <div class="phsub"><small>${hint}　最多 3 張</small><label class="phalt">或者揀相<input type="file" accept="image/*" multiple data-k="${k}"></label></div>
+      <div class="phst" id="ps-${k}"></div><div class="thumbs" id="pt-${k}"></div></div>`).join("")}
   </div>
   <label class="rf"><span>備註</span><input id="f-note" type="text" maxlength="200" placeholder="可以唔填"></label>
   <button id="r-send" class="rbtn">交數</button>
@@ -250,10 +251,10 @@ async function shrink(file){const u=URL.createObjectURL(file);try{const img=awai
     out=c.toDataURL("image/jpeg",q);if(out.length*0.75<4e5)break;if(q>0.5)q-=0.1;else L=Math.round(L*0.8)}return out}finally{URL.revokeObjectURL(u)}}
 function thumbs(k){const m=((C.st[date()+":"+$("r-shop").value]||{}).mine||{}).ph||{};
   $("pt-"+k).innerHTML=P[k].map((u,i)=>'<span class="th"><img src="'+u+'"><b data-k="'+k+'" data-i="'+i+'">✕</b></span>').join("");
-  $("ps-"+k).textContent=P[k].length?"揀咗 "+P[k].length+" 張，交數時一齊上載"+(m[k]?"（會換走之前 "+m[k].n+" 張）":""):m[k]?"✅ 已上載 "+m[k].n+" 張（再揀就換過）":"";}
-document.querySelectorAll(".phrow input").forEach(inp=>inp.onchange=async()=>{const k=inp.dataset.k,fs=[...inp.files];inp.value="";
+  $("ps-"+k).textContent=P[k].length?"已影 "+P[k].length+" 張，撳「交數」一齊上載"+(m[k]?"（會換走之前 "+m[k].n+" 張）":""):m[k]?"✅ 已上載 "+m[k].n+" 張（再揀就換過）":"";}
+document.querySelectorAll(".phrow input[type=file]").forEach(inp=>inp.onchange=async()=>{const k=inp.dataset.k,fs=[...inp.files];inp.value="";
   $("ps-"+k).textContent="處理緊相…";
-  for(const f of fs){if(P[k].length>=3){alert("每類最多 3 張");break}try{P[k].push(await shrink(f))}catch(e){$("r-msg").innerHTML='<p class="rerr">'+e.message+'</p>'}}thumbs(k)});
+  for(const f of fs){if(P[k].length>=3){$("r-msg").innerHTML='<p class="rerr">每類最多 3 張，撳相上面 ✕ 刪咗先再影</p>';break}try{P[k].push(await shrink(f))}catch(e){$("r-msg").innerHTML='<p class="rerr">'+e.message+'</p>'}}thumbs(k)});
 document.querySelectorAll(".thumbs").forEach(t=>t.onclick=e=>{const b=e.target.closest("b");if(!b)return;P[b.dataset.k].splice(+b.dataset.i,1);thumbs(b.dataset.k)});
 function load(){const d=date(),s=$("r-shop").value,k=d+":"+s,x=C.st[k]||{},al=(C.alone[d]||{})[s]!==false;
   P.mp=[];P.big=[];$("pw-big").hidden=s!=="海上居";
@@ -268,8 +269,8 @@ $("r-send").onclick=async()=>{const s=$("r-shop").value,d=date(),al=(C.alone[d]|
   if(f.p==null){$("r-msg").innerHTML='<p class="rerr">個人單剪一定要填</p>';return}
   if(al&&f.t==null)f.t=f.p;
   const m0=((C.st[d+":"+s]||{}).mine||{}).ph||{};
-  if(C.photoReq){if(f.mp!=null&&!P.mp.length&&!m0.mp){$("r-msg").innerHTML='<p class="rerr">請上載澳門通單據相</p>';return}
-    if(f.big!=null&&!P.big.length&&!m0.big){$("r-msg").innerHTML='<p class="rerr">請上載大頭工銀單據相</p>';return}}
+  if(s==="海上居"&&f.big>0&&!P.big.length&&!m0.big){$("r-msg").innerHTML='<p class="rerr big">大頭工銀要影單據先交到</p>';$("pw-big").scrollIntoView({block:"center"});return}
+  if(C.photoReq&&f.mp!=null&&!P.mp.length&&!m0.mp){$("r-msg").innerHTML='<p class="rerr big">澳門通要影單據先交到</p>';return}
   const photos={};["mp","big"].forEach(k=>{if(P[k].length)photos[k]=P[k]});
   $("r-send").disabled=true;$("r-msg").textContent=Object.keys(photos).length?"交緊（連相上載，可能要幾秒）…":"交緊…";
   try{const code=location.pathname.split("/")[2];
@@ -293,9 +294,12 @@ export const REPORT_CSS = `
 .rf input[type=text]{width:12em;text-align:left;font-size:.95rem}
 .rsec{background:#faf7ef;border-radius:10px;padding:4px 10px;margin:8px 0}.rsh{font-weight:600;padding-top:4px}.rsh small{font-weight:400;color:var(--muted)}
 .rbtn{width:100%;margin-top:12px;padding:12px;font-size:1.1rem;border:0;border-radius:10px;background:var(--teal);color:#fff}
-.rf[hidden]{display:none}.phrow{padding:6px 0;border-bottom:1px solid #f0eee8}.phrow[hidden]{display:none}
-.phbtn{display:inline-block;padding:8px 12px;border:1px solid var(--teal);border-radius:8px;color:var(--teal);background:#fff;font-size:.95rem}
-.phbtn input{display:none}.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.th{position:relative}
-.th img{width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
-.th b{position:absolute;top:-6px;right:-6px;background:#c0562b;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;text-align:center;cursor:pointer}
+.rf[hidden]{display:none}.phrow{padding:8px 0;border-bottom:1px solid #f0eee8}.phrow[hidden]{display:none}
+.phbig{display:block;text-align:center;padding:16px 10px;border:2px solid var(--teal);border-radius:12px;color:var(--teal);background:#fff;font-size:1.2rem;font-weight:700}
+.phbig:active{background:#e6f2f2}.phbig input,.phalt input{display:none}
+.phsub{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.phsub small{color:var(--muted);font-size:.82rem}
+.phalt{color:var(--teal);text-decoration:underline;font-size:.95rem;padding:6px 2px}
+.phst{font-size:1rem;margin-top:4px}.rerr.big{font-size:1.15rem;font-weight:700}.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.th{position:relative}
+.th img{width:84px;height:84px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
+.th b{position:absolute;top:-8px;right:-8px;background:#c0562b;color:#fff;border-radius:50%;width:28px;height:28px;font-size:15px;line-height:28px;text-align:center;cursor:pointer}
 .rbtn:disabled{opacity:.5}.rok{color:var(--deep);font-weight:600}.rerr{color:#c0562b}`;
