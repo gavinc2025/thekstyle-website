@@ -224,9 +224,9 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   <div id="r-status" class="mates"></div>
   ${num("p", "個人單剪", "（必填）")}
   <div class="rsec" id="shopsec"><div class="rsh">全店數 <small id="shopnote"></small></div>
-    ${num("t", "全店客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數")}${num("icbc", "工銀剪數")}${num("card", "消卡剪數")}${num("normal", "正常收費剪數", "（$60 嗰啲）")}
+    ${num("t", "全店客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數", "（冇就唔使填）")}${num("icbc", "工銀剪數", "（冇就唔使填）")}${num("card", "消卡剪數", "（冇就唔使填）")}${num("normal", "正常收費剪數", "（$60 嗰啲；冇就唔使填）")}
   </div>
-  ${num("big", "大頭工銀 $")}${num("tip", "小費 $")}
+  ${num("big", "大頭工銀 $", "（冇就唔使填）")}${num("tip", "小費 $", "（冇就唔使填）")}
   <div class="rsec"><div class="rsh">單據相</div>
     ${[["mp", "澳門通單據", photoReq ? "（有填澳門通就要影）" : "（可以唔影）"], ["big", "大頭工銀單據", "（有填大頭工銀就一定要影）"]].map(([k, lab, hint]) => `<div class="phrow" id="pw-${k}">
       <label class="phbig">📷 影${lab}<input type="file" accept="image/*" capture="environment" data-k="${k}"></label>
