@@ -97,6 +97,77 @@ function payCard(data, name) {
     <div class="mates">工資或者假期有唔啱，歡迎打電話問老闆</div></div>` : "";
 }
 
+
+// ===== 當月業績（10/14 用戶：員工實時睇自己做成點；有排名但唔顯示其他人數字；唔顯示金額，海上居顯示大頭工銀） =====
+const dow = d => new Date(d + "T00:00:00Z").getUTCDay();
+const isWE = d => dow(d) === 0 || dow(d) === 6;
+const avgOf = a => a.length ? a.reduce((s, [, n]) => s + n, 0) / a.length : 0;
+function perfStats(data, name, today) {
+  const P = data.perf, me = P && P.people && P.people[name];
+  if (!me) return null;
+  const [y, m] = P.month.split("-").map(Number), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const monthEnd = `${P.month}-${String(last).padStart(2, "0")}`;
+  const worked = Object.entries(me.days).filter(([, n]) => n > 0);
+  const all = avgOf(worked), we = avgOf(worked.filter(([d]) => isWE(d))), wd = avgOf(worked.filter(([d]) => !isWE(d)));
+  // 仲要返幾多日（按更表）：今日未報就連今日計
+  const rem = data.days.filter(d => d.d >= today && d.d <= monthEnd && d.d.startsWith(P.month) && !(d.d === today && me.days[today] != null)
+    && where(d, name).kind === "work");
+  const remWE = rem.filter(d => isWE(d.d)).length, remWD = rem.length - remWE;
+  const proj = Math.round(me.total + (wd || all) * remWD + (we || all) * remWE);
+  const elapsed = Math.min(+today.slice(8, 10) - (me.days[today] != null ? 0 : 1), last);
+  const best = worked.reduce((b, x) => (!b || x[1] > b[1] ? x : b), null);
+  return { P, me, last, worked, all, we, wd, rem, remWE, remWD, proj, off: Math.max(0, elapsed - worked.length), best };
+}
+function perfCard(data, name, today) {
+  const s = perfStats(data, name, today);
+  if (!s) return "";
+  const { P, me } = s, vt = P.verified_through || "", mo = +P.month.slice(5), pmo = +P.prev_month.slice(5);
+  const max = Math.max(1, ...Object.values(me.days));
+  const rows = [];
+  for (let i = 1; i <= Math.max(P.upto, +today.slice(8, 10) * (today.startsWith(P.month) ? 1 : 0)); i++) {
+    const d = `${P.month}-${String(i).padStart(2, "0")}`, n = me.days[d];
+    if (d > today) break;
+    const day = data.days.find(x => x.d === d), w = day ? where(day, name) : null;
+    const tag = "";   // 10/14 用戶：已核／待核暫時唔顯示
+    const big = me.bighead && me.bighead[d] ? `<small>大頭 $${me.bighead[d]}</small>` : "";
+    rows.push(`<li class="${isWE(d) ? "wkend" : ""}"><span class="d">${md(d)}<i>${WK[dow(d)]}</i></span>${n != null
+      ? `<span class="bar"><b style="width:${Math.round(n / max * 100)}%"></b></span><span class="n">${n}</span>${tag}${big}`
+      : `<span class="bar none">${w && w.kind === "leave" ? "放假" : w && w.kind === "off" ? "休息" : d === today ? "今日未報" : "冇報數"}</span>`}</li>`);
+  }
+  const diff = me.total - me.prev_same;
+  const need = me.prev_total > me.total && s.rem.length ? Math.ceil((me.prev_total - me.total) / s.rem.length) : 0;
+  const bigTot = me.bighead ? Object.values(me.bighead).reduce((a, b) => a + b, 0) : 0;
+  const tips = [
+    `本月返咗 <b>${s.worked.length}</b> 日，休息／放假 <b>${s.off}</b> 日；平均每日 <b>${num(s.all)}</b> 剪`,
+    s.we && s.wd ? `星期六日平均 <b>${num(s.we)}</b> 剪，平日 <b>${num(s.wd)}</b> 剪` : "",
+    `${pmo}月同期（1–${P.upto} 號）：${me.prev_same} 剪，${diff >= 0 ? `今個月<b class="up">多 ${diff}</b>` : `今個月<b class="neg">少 ${-diff}</b>`}`,
+    s.rem.length ? `按更表仲要返 <b>${s.rem.length}</b> 日，其中星期六日 <b>${s.remWE}</b> 日（星期六日客多）` : `今個月按更表已經冇更`,
+    need ? `想追過 ${pmo}月全月（${me.prev_total} 剪），之後每日要做 <b>${need}</b> 剪` : me.prev_total ? `已經超過 ${pmo}月全月（${me.prev_total} 剪）👍` : "",
+    s.best ? `今個月最好一日：${md(s.best[0])}（${WK[dow(s.best[0])]}）${s.best[1]} 剪` : "",
+    bigTot ? `大頭工銀累計：<b>$${bigTot.toLocaleString("en-US")}</b>` : "",
+  ].filter(Boolean);
+  return `<div class="card leavecard perf">
+    <div class="lbl">我 ${mo} 月業績（報數到 ${md(`${P.month}-${String(P.upto).padStart(2, "0")}`)}）</div>
+    <div class="pgrid"><div><div class="big">${me.total}<small>剪</small></div><div class="mates">累計</div></div>
+      <div><div class="big">≈ ${s.proj}<small>剪</small></div><div class="mates">按而家速度月尾大約</div></div></div>
+    <ul class="ptips">${tips.map(t => `<li>${t}</li>`).join("")}</ul>
+    <details><summary>每日明細</summary><ul class="pdays">${rows.join("")}</ul></details>
+    <div class="mates">交咗報數幾分鐘內更新。</div></div>`;
+}
+function perfBoss(data, today) {
+  const P = data.perf;
+  if (!P) return `<p class="mates">未有業績資料</p>`;
+  const names = Object.keys(P.people).filter(n => P.people[n].total || P.people[n].prev_same)
+    .sort((a, b) => (P.people[a].rank || 99) - (P.people[b].rank || 99));
+  return `<p class="mates">${+P.month.slice(5)} 月報數到 ${P.upto} 號；員工頁只見自己嘅數（冇排名）</p>
+  <div class="ptab"><table><tr><th>名</th><th>剪數</th><th>日數</th><th>平均</th><th>上月同期</th><th>月尾≈</th></tr>
+  ${names.map(n => { const s = perfStats(data, n, today) || {}, me = P.people[n];
+    const big = me.bighead ? `<div class="mates">大頭 $${Object.values(me.bighead).reduce((a, b) => a + b, 0).toLocaleString("en-US")}</div>` : "";
+    const d = me.total - me.prev_same;
+    return `<tr><td>${me.rank}. ${esc(n)}${big}</td><td><b>${me.total}</b></td><td>${(s.worked || []).length}</td><td>${num(s.all || 0)}</td><td>${me.prev_same}<small class="${d >= 0 ? "up" : "neg"}">${d >= 0 ? "+" : ""}${d}</small></td><td>${s.proj ?? "—"}</td></tr>`; }).join("")}
+  <tr class="tot"><td>合計</td><td><b>${names.reduce((a, n) => a + P.people[n].total, 0)}</b></td><td></td><td></td><td>${names.reduce((a, n) => a + P.people[n].prev_same, 0)}</td><td></td></tr></table></div>`;
+}
+
 function leaveCard(data, name, today) {
   const b = balance(data, name), up = upcoming(data, name, today);
   if (!b && !up.length) return "";
@@ -128,6 +199,13 @@ header{background:var(--deep);color:var(--cream);padding:18px 16px 16px}
 header h1{margin:0;font-size:1.35rem}header p{margin:4px 0 0;font-size:.8rem;opacity:.7}
 main{max-width:640px;margin:0 auto;padding:14px 16px 40px}
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.perf .pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:6px 0}.perf .pgrid .big{font-size:1.25rem}.perf .pgrid .big small{margin-left:3px}
+.ptips{margin:6px 0;padding:0;list-style:none;font-size:.88rem}.ptips li{display:block;margin:4px 0;padding:0 0 0 12px;border:0;position:relative}.ptips li:before{content:'•';position:absolute;left:0;color:var(--teal)}.up{color:#2b8a3e}
+.pdays{list-style:none;margin:6px 0;padding:0;font-size:.85rem}.pdays li{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #eee}.pdays li.wkend{background:#fbf6e6}
+.pdays .d{width:4.4em;white-space:nowrap;flex:none}.pdays .d i{font-style:normal;color:var(--muted);margin-left:2px}.pdays .bar{flex:1;height:10px;background:#eef3f2;border-radius:5px;overflow:hidden}.pdays .bar b{display:block;height:100%;background:var(--teal)}
+.pdays .bar.none{background:none;height:auto;color:var(--muted);font-size:.8rem}.pdays .n{width:2.2em;text-align:right;font-weight:600}.pdays i.ok,.pdays i.pend{font-style:normal;font-size:.72rem;padding:0 5px;border-radius:8px}
+.pdays i.ok{background:#e3f2e6;color:#2b8a3e}.pdays i.pend{background:#fdf0dc;color:#b7791f}.pdays small{color:var(--muted);font-size:.72rem}
+.ptab{overflow-x:auto}.ptab table{width:100%;border-collapse:collapse;font-size:.85rem;background:#fff;border-radius:10px}.ptab th,.ptab td{padding:6px 5px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap}.ptab th:first-child,.ptab td:first-child{text-align:left}.ptab small{margin-left:3px;font-size:.72rem}.ptab .tot td{font-weight:700}
 .card{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 4px 14px rgba(19,64,63,.08)}
 .leavecard{margin-top:10px}.neg{color:#c0562b}
 .card .lbl{font-size:.85rem;color:var(--muted)}.card .big{font-size:1.4rem;margin-top:2px}
@@ -173,6 +251,7 @@ export function rosterPage(data, name, today, extra = "") {
   return page(`上手屋更表 ‧ ${name}`, `${updated(data)}　${home ? `本店：${esc(home)}` : "頂班師傅"}`, `
 <div class="cards">${card(days[0], "今日")}${card(days[1], "明日")}</div>
 ${extra}
+${perfCard(data, name, today)}
 ${leaveCard(data, name, today)}
 ${payCard(data, name)}
 ${tabs([["mine", "我嘅更"], ["all", "全店更表"]])}
@@ -192,8 +271,9 @@ function bossPage(data, today) {
   }).join("");
   const total = lb ? num(names.reduce((s, n) => s + (lb.balance[n] || 0), 0)) : "—";
   return page("上手屋更表 ‧ 老闆", `${updated(data)}　全部員工`, `
-${tabs([["all", "全店更表"], ["bal", "假期結餘"], ["pay", "工資"], ["person", "個人更表"]])}
+${tabs([["all", "全店更表"], ["perf", "業績"], ["bal", "假期結餘"], ["pay", "工資"], ["person", "個人更表"]])}
 <div id="all">${allShops(data, days, today, null)}</div>
+<div id="perf" hidden>${perfBoss(data, today)}</div>
 <div id="bal" hidden>
   <p class="mates">${lb ? `截至${esc(lb.label)}（已核對）；每月尾計完假期先更新` : "未有假期結餘資料"}</p>
   <div class="bal">${balRows}<div class="brow tot"><span class="bn">合計</span><span class="bs"></span><span class="n">${total}</span></div></div>
