@@ -10,6 +10,7 @@ export const price = shop => PRICE[shop] || 60;
 // 欄：個人單剪必填；其餘留空＝冇
 const F = ["p", "t", "mp", "cash", "icbc", "card", "tip", "big", "normal"];
 const SHOP_F = ["t", "mp", "cash", "icbc", "card", "normal"];   // 全店數：同舖多人時只需一個人填
+const ICBC_MAX = 50;   // 10/16 用戶：工銀剪數係「剪數」唔係金額（強 10/15 填咗 $300），超過 50 唔俾交
 const PHOTO_KINDS = ["mp", "big"];   // 單據相：澳門通、大頭工銀（海上居）
 const PHOTO_MAX = { mp: 3, big: 10 };   // 每類最多幾張（用戶 10/9：大頭工銀 10 張）；TG 一組最多 10 張，每類分開發
 export const photoKey = (date, key, kind, rev, i) => `photo:${date}:${key}:${kind}:${rev}:${i}`;
@@ -80,6 +81,7 @@ export async function postReport(request, env, data, name, today, body) {
     if (!Number.isInteger(n) || n < 0 || n > 99999) return json({ error: `「${k}」要填整數` }, 400);
     f[k] = n;
   }
+  if (f.icbc != null && f.icbc > ICBC_MAX) return json({ error: `工銀剪數係填「剪數」，唔係金額（最多 ${ICBC_MAX}）` }, 400);
   if (f.p == null) return json({ error: "個人單剪一定要填" }, 400);
   if (body.shop !== "海上居") f.big = null;
   if (body.shop !== "澳門大學") f.normal = null;
@@ -214,7 +216,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
     price: Object.fromEntries(data.shops.map(s => [s, price(s)])),
   };
   const md = d => `${+d.slice(5, 7)}/${+d.slice(8, 10)}`;
-  const num = (id, label, hint = "") => `<label class="rf" id="w-${id}"><span>${label}${hint ? `<small>${hint}</small>` : ""}</span><input id="f-${id}" type="number" inputmode="numeric" min="0" step="1"></label>`;
+  const num = (id, label, hint = "", max = "") => `<label class="rf" id="w-${id}"><span>${label}${hint ? `<small>${hint}</small>` : ""}</span><input id="f-${id}" type="number" inputmode="numeric" min="0" step="1"${max ? ` max="${max}"` : ""}></label>`;
   return `<div class="card repcard" id="report">
   <div class="lbl">報數${test ? ` <b class="leave">測試模式（唔會入真數）</b>` : ""}</div>
   <div class="rrow">
@@ -224,7 +226,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   <div id="r-status" class="mates"></div>
   ${num("p", "個人單剪", "（必填）")}
   <div class="rsec" id="shopsec"><div class="rsh">全店數 <small id="shopnote"></small></div>
-    ${num("t", "全店單剪客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數", "（冇就唔使填）")}${num("icbc", "工銀剪數", "（冇就唔使填）")}${num("card", "消卡剪數", "（冇就唔使填）")}${num("normal", "正常收費剪數", "（$60 嗰啲；冇就唔使填）")}
+    ${num("t", "全店單剪客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數", "（冇就唔使填）")}${num("icbc", "工銀剪數", "（填幾多剪，唔係金額！冇就唔使填）", ICBC_MAX)}${num("card", "消卡剪數", "（冇就唔使填）")}${num("normal", "正常收費剪數", "（$60 嗰啲；冇就唔使填）")}
   </div>
   ${num("big", "大頭工銀 $", "（冇就唔使填）")}${num("tip", "小費 $", "（冇就唔使填）")}
   <div class="rsec"><div class="rsh">單據相</div>
@@ -267,6 +269,7 @@ $("r-shop").onchange=load;if(!C.test)$("r-date").onchange=()=>{const d=C.def[dat
 $("r-send").onclick=async()=>{const s=$("r-shop").value,d=date(),al=(C.alone[d]||{})[s]!==false,f={};
   F.forEach(k=>{const v=$("f-"+k).value.trim();f[k]=v===""?null:+v});
   if(f.p==null){$("r-msg").innerHTML='<p class="rerr">個人單剪一定要填</p>';return}
+  if(f.icbc!=null&&f.icbc>${ICBC_MAX}){$("r-msg").innerHTML='<p class="rerr big">工銀剪數係填「剪數」，唔係金額（最多 ${ICBC_MAX}）</p>';$("w-icbc").scrollIntoView({block:"center"});return}
   if(al&&f.t==null)f.t=f.p;
   const m0=((C.st[d+":"+s]||{}).mine||{}).ph||{};
   if(s==="海上居"&&f.big>0&&!P.big.length&&!m0.big){$("r-msg").innerHTML='<p class="rerr big">大頭工銀要影單據先交到</p>';$("pw-big").scrollIntoView({block:"center"});return}
