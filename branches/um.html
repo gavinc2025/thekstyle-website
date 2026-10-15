@@ -101,6 +101,12 @@
     <p class="bp-xsell bp-xsell-sc" lang="zh-Hans">想洗头？请到 <a href="universe#wash">寰宇天下店</a>（黑沙环中街 194 号），MOP 200，包吹干，请先致电 6801 6817 预约。</p>
   </section>
 
+  <section class="wrap bp-sec" id="works" hidden>
+    <h2>師傅作品</h2>
+    <div class="bp-works" id="liveWorks"></div>
+    <div class="bp-gallery"></div>
+  </section>
+
   <section class="wrap bp-sec">
     <h2>點去</h2>
     <p class="bp-howto">澳門大學校園內薈萃坊商場 S8 座，上二樓，超級市場對面。</p>
@@ -142,6 +148,22 @@ document.getElementById("year").textContent = new Date().getFullYear();
     }).catch(function () {});
   }
   tick(); setInterval(tick, 60000);
+})();
+(function () {
+  var box = document.getElementById("liveWorks"), sec = document.getElementById("works");
+  function esc(s) { return String(s || "").replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  fetch("/api/works?shop=um").then(function (r) { return r.json(); }).then(function (d) {
+    if (!d.works || !d.works.length) return;
+    box.innerHTML = d.works.map(function (w) {
+      var m = w.video ? '<video src="' + w.video + '" poster="' + (w.poster || "") + '" controls preload="none" playsinline></video>'
+        : w.photos.map(function (p) { return '<img src="' + p + '" alt="' + esc(w.title) + '" loading="lazy">'; }).join("");
+      return '<article class="bp-wk"><div class="bp-wk-m' + (w.video ? " v" : "") + '">' + m + '</div><div class="bp-wk-t"><h3>' + esc(w.title) + '</h3>'
+        + (w.problem ? '<p><b>客人想要：</b>' + esc(w.problem) + '</p>' : "")
+        + (w.solution ? '<p><b>師傅點做：</b>' + esc(w.solution) + '</p>' : "")
+        + '<small>師傅 ' + esc(w.name) + '</small></div></article>';
+    }).join("");
+    sec.hidden = false;
+  }).catch(function () {});
 })();
 var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
 if (t && l) t.addEventListener("click", function () { l.classList.toggle("open"); });

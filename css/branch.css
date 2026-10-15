@@ -108,3 +108,20 @@
 /* ---- 師傅作品（寰宇天下） ---- */
 .bp-work img { aspect-ratio: 3 / 4; }
 .bp-work figcaption { padding: 8px 12px; font-size: .9rem; color: var(--muted); background: var(--white); }
+.bp-works { display: grid; gap: 16px; margin-bottom: 16px; }
+.bp-wk { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+.bp-wk-m { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 4px; background: #000; }
+.bp-wk-m img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; }
+.bp-wk-m.v { display: block; }
+.bp-wk-m video { display: block; width: 100%; max-height: 70vh; background: #000; }
+.bp-wk-t { padding: 12px 16px 14px; line-height: 1.75; }
+.bp-wk-t h3 { margin: 0 0 4px; font-size: 1.08rem; color: var(--teal-deep); }
+.bp-wk-t p { margin: 0 0 4px; font-size: .94rem; }
+.bp-wk-t small { color: var(--muted); }
+
+/* ---- 染燙小知識短片 ---- */
+.bp-vids { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.bp-vid { margin: 0; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.bp-vid video { display: block; width: 100%; aspect-ratio: 9 / 16; background: #000; object-fit: contain; }
+.bp-vid figcaption { padding: 10px 14px 12px; font-size: .9rem; line-height: 1.7; color: var(--muted); }
+.bp-vid figcaption b { display: block; color: var(--teal-deep); font-size: 1rem; }

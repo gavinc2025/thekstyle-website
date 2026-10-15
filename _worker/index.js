@@ -4,10 +4,12 @@
 //   GET  /api/status?shop=um → {"date":"2026-09-27","open":"09:51"}（未開 = null）
 //   POST /api/roster  NAS 推員工更表（Bearer ROSTER token）→ KV "roster"
 //   GET  /r/<專屬碼>  員工更表頁（見 roster.js；唔俾 Google 收錄）＋報數卡（?test=1 測試模式）
+//   /api/work、/api/work-up、/api/works、/w/<id>/<檔>、/api/works-nas…  師傅作品（見 works.js）
 //   POST /api/report  員工交數（body 帶專屬碼）；/api/reports、/api/report-ack、/api/report-purge 俾 NAS 用（見 report.js）
 // 其餘網址照出靜態檔（wrangler.jsonc 只將 /api/* 交畀呢個程式）
 import { rosterPage, goneHtml, BOSS } from "./roster.js";
 import { reportCard, reportState, postReport, nasApi } from "./report.js";
+import { canWork, worksCard, worksBoss, pendingCount, workApi, workUpload, worksPublic, workMedia, worksNas } from "./works.js";
 
 const SHOPS = new Set(["um", "nanjing"]);  // 澳大店（SH06）、消防局店（SH04）
 const TZ_MS = 8 * 3600 * 1000;            // 澳門時間 UTC+8
@@ -48,9 +50,31 @@ export default {
         const hour = new Date(Date.now() + TZ_MS).getUTCHours();
         extra = reportCard(data, name, today, await reportState(env, name, today, test), test, hour, env.REPORT_PHOTO_REQUIRED === "1");
       }
+      // 師傅作品：海上居、澳大師傅上載；老闆頁「作品」分頁批准
+      if (name === BOSS) extra = await worksBoss(env, code);
+      else if (canWork(data, name)) extra += await worksCard(env, data, name, code);
       return html(rosterPage(data, name, today, extra));
     }
+    if (url.pathname.startsWith("/w/") && request.method === "GET") return workMedia(request, env, url);
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
+
+    if (url.pathname === "/api/works" && request.method === "GET") return worksPublic(env, url);
+    if ((url.pathname === "/api/work" && request.method === "POST") || (url.pathname === "/api/work-up" && request.method === "PUT")) {
+      const isUp = url.pathname === "/api/work-up";
+      let body = {};
+      if (!isUp) { try { body = await request.json(); } catch { return json({ error: "body" }, 400); } }
+      const code = String((isUp ? url.searchParams.get("code") : body && body.code) || "").replace(/[^A-Za-z0-9_-]/g, "");
+      const data = /^[A-Za-z0-9_-]{8,64}$/.test(code) && await env.STATUS.get("roster", "json");
+      const name = data && data.links[await sha256hex(code)];
+      if (!name) return json({ error: "連結無效" }, 401);
+      return isUp ? workUpload(request, env, name, url) : workApi(env, data, name, name === BOSS, body);
+    }
+    if (["/api/works-nas", "/api/work-raw", "/api/work-media", "/api/work-nas"].includes(url.pathname)) {
+      const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+      if (!token || (await sha256hex(token)) !== env.ROSTER_TOKEN_SHA256) return json({ error: "auth" }, 401);
+      const r = await worksNas(request, env, url);
+      if (r) return r;
+    }
 
     if (url.pathname === "/api/report" && request.method === "POST") {
       let body;

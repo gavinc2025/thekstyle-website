@@ -38,6 +38,14 @@ UNIVERSE_FAQ = [
     ("營業時間係幾點？", f"同分店一樣，{HOURS}。"),
 ]
 
+# 染燙小知識短片（VoxPix 出片，女聲；只放自己網站，唔放有留言嘅平台——用戶 10/16）
+# (檔名, 標題, 描述)；檔案喺 assets/video/<檔名>.mp4 ＋ <檔名>.jpg 封面
+KNOW_VIDEOS = [
+    ("k1_ranfa", "染頭髮前後要注意咩？", "第一次染先喺耳後試敏感、染前一日唔好洗頭、染完 48 小時內唔好洗頭，用護色洗頭水。"),
+    ("k2_dianfa", "電髮點樣先可以長啲？", "電完 48 小時唔好洗頭、唔好綁頭；電髮同染髮最好隔一至兩個星期。"),
+    ("k3_lazhi", "拉直頭髮要知嘅三件事", "做完 48–72 小時唔好洗頭、唔好綁頭；新生頭髮會再曲，一般幾個月補做髮根。"),
+]
+
 BRANCHES = [
     dict(slug="tsaikong", en="Tsai Kong Nam", name="雀仔園分店", area="澳門半島",
          addr="澳門馬大臣街 39-A 號富麗樓地下 B 舖",
@@ -85,6 +93,7 @@ BRANCHES = [
          map="澳門大學 薈萃坊商場 上手屋",
          howto="澳門大學校園內薈萃坊商場 S8 座，上二樓，超級市場對面。",
          price=[("學生／教職員（學校卡）", "MOP 54"), ("一般收費", "MOP 60")],
+         live_works=True,   # 師傅喺專屬連結上載、老闆批咗 → /api/works?shop=um
          live="um",   # 路由器偵測師傅返工 → 頁頂顯示「已開門」（_worker/index.js /api/status）
          photos=[("assets/img/branch/um-front.jpg", "澳門大學店門面"),
                  ("assets/img/branch/um.jpg", "澳門大學店店內座位")],
@@ -103,6 +112,8 @@ BRANCHES = [
          tagline="快剪 ‧ 染髮 ‧ 燙髮 ‧ 直髮",
          title="黑沙環剪髮、染髮、電髮 ‧ 澳门洗头",
          works_title="師傅作品",
+         live_works=True,
+         videos=KNOW_VIDEOS,
          services=SERVICES, faq=UNIVERSE_FAQ),
 ]
 
@@ -155,17 +166,52 @@ def page(b, others):
         '<p class="bp-nophoto">分店相片稍後上載。</p>')
     works = b.get("works") or []
     works_html = ""
-    if works:
+    works_js = ""
+    if works or b.get("live_works"):
         figs = "".join(
             f'<figure class="bp-photo bp-work"><img src="../{src}" alt="{e(alt)}" loading="lazy">'
             f'{f"<figcaption>{e(alt)}</figcaption>" if alt != b["name"] + "師傅作品" else ""}</figure>'
             for src, alt in works)
         works_html = f"""
-  <section class="wrap bp-sec" id="works">
+  <section class="wrap bp-sec" id="works"{"" if works else " hidden"}>
     <h2>{e(b.get('works_title') or '師傅作品')}</h2>
+    <div class="bp-works" id="liveWorks"></div>
     <div class="bp-gallery">{figs}</div>
   </section>
 """
+    works_js = ""
+    if b.get("live_works"):
+        works_js = """
+(function () {
+  var box = document.getElementById("liveWorks"), sec = document.getElementById("works");
+  function esc(s) { return String(s || "").replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  fetch("/api/works?shop=%s").then(function (r) { return r.json(); }).then(function (d) {
+    if (!d.works || !d.works.length) return;
+    box.innerHTML = d.works.map(function (w) {
+      var m = w.video ? '<video src="' + w.video + '" poster="' + (w.poster || "") + '" controls preload="none" playsinline></video>'
+        : w.photos.map(function (p) { return '<img src="' + p + '" alt="' + esc(w.title) + '" loading="lazy">'; }).join("");
+      return '<article class="bp-wk"><div class="bp-wk-m' + (w.video ? " v" : "") + '">' + m + '</div><div class="bp-wk-t"><h3>' + esc(w.title) + '</h3>'
+        + (w.problem ? '<p><b>客人想要：</b>' + esc(w.problem) + '</p>' : "")
+        + (w.solution ? '<p><b>師傅點做：</b>' + esc(w.solution) + '</p>' : "")
+        + '<small>師傅 ' + esc(w.name) + '</small></div></article>';
+    }).join("");
+    sec.hidden = false;
+  }).catch(function () {});
+})();""" % b["slug"]
+    vid_html = ""
+    if b.get("videos"):
+        cards = "".join(
+            f'<figure class="bp-vid"><video src="../assets/video/{f}.mp4" poster="../assets/video/{f}.jpg" controls preload="none" playsinline></video>'
+            f'<figcaption><b>{e(t)}</b>{e(d)}</figcaption></figure>' for f, t, d in b["videos"])
+        vid_html = f"""
+  <section class="wrap bp-sec" id="tips">
+    <h2>染燙小知識</h2>
+    <div class="bp-vids">{cards}</div>
+  </section>
+"""
+        vids_ld = [{"@context": "https://schema.org", "@type": "VideoObject", "name": t, "description": d,
+                    "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg", "contentUrl": f"{SITE}/assets/video/{f}.mp4",
+                    "uploadDate": "2026-10-16", "inLanguage": "yue"} for f, t, d in b["videos"]]
     prices = "".join(f"<tr><th>{e(n)}</th><td>{e(p)}</td></tr>" for n, p in b["price"])
     nav_others = "".join(
         f'<li><a href="{o["slug"]}">{e(o["name"])}<span>{e(o["area"])}</span></a></li>'
@@ -204,6 +250,9 @@ def page(b, others):
                                "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in b["faq"]]}
         extra_ld = ('\n<script type="application/ld+json">'
                     + json.dumps(faq, ensure_ascii=False, indent=2) + '</script>')
+    if b.get("videos"):
+        extra_ld += ('\n<script type="application/ld+json">'
+                     + json.dumps(vids_ld, ensure_ascii=False, indent=2) + '</script>')
     og_img = f'\n<meta property="og:image" content="{SITE}/{b["photos"][0][0]}">' if b["photos"] else ""
     live_html = ""
     live_js = ""
@@ -314,7 +363,7 @@ def page(b, others):
 </header>
 
 <main>
-{svc_html}{works_html}
+{svc_html}{vid_html}{works_html}
   <section class="wrap bp-sec">
     <h2>點去</h2>
     <p class="bp-howto">{e(b['howto'])}</p>
@@ -344,7 +393,7 @@ def page(b, others):
 </footer>
 
 <script>
-document.getElementById("year").textContent = new Date().getFullYear();{live_js}
+document.getElementById("year").textContent = new Date().getFullYear();{live_js}{works_js}
 var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
 if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"); }});
 </script>

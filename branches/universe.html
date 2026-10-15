@@ -156,6 +156,38 @@
     }
   ]
 }</script>
+<script type="application/ld+json">[
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": "染頭髮前後要注意咩？",
+    "description": "第一次染先喺耳後試敏感、染前一日唔好洗頭、染完 48 小時內唔好洗頭，用護色洗頭水。",
+    "thumbnailUrl": "https://thekstyle.com/assets/video/k1_ranfa.jpg",
+    "contentUrl": "https://thekstyle.com/assets/video/k1_ranfa.mp4",
+    "uploadDate": "2026-10-16",
+    "inLanguage": "yue"
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": "電髮點樣先可以長啲？",
+    "description": "電完 48 小時唔好洗頭、唔好綁頭；電髮同染髮最好隔一至兩個星期。",
+    "thumbnailUrl": "https://thekstyle.com/assets/video/k2_dianfa.jpg",
+    "contentUrl": "https://thekstyle.com/assets/video/k2_dianfa.mp4",
+    "uploadDate": "2026-10-16",
+    "inLanguage": "yue"
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": "拉直頭髮要知嘅三件事",
+    "description": "做完 48–72 小時唔好洗頭、唔好綁頭；新生頭髮會再曲，一般幾個月補做髮根。",
+    "thumbnailUrl": "https://thekstyle.com/assets/video/k3_lazhi.jpg",
+    "contentUrl": "https://thekstyle.com/assets/video/k3_lazhi.mp4",
+    "uploadDate": "2026-10-16",
+    "inLanguage": "yue"
+  }
+]</script>
 </head>
 <body class="branch-page">
 
@@ -213,6 +245,17 @@
     <details class="bp-faq"><summary>澳门哪里可以洗头？</summary><p>上手屋只有寰宇天下店（黑沙环中街 194 号）可以洗头，MOP 200，包吹干、不包造型，不用剪发也可以。请先致电 6801 6817 预约；营业时间每天 10:00–20:00。</p></details><details class="bp-faq"><summary>染髮、電髮幾錢？</summary><p>染髮 MOP 580 起、燙髮（電髮）MOP 780 起、直髮 MOP 680 起，唔分男女；長頭髮會按長度另加少少。實際價錢可以致電查詢。</p></details><details class="bp-faq"><summary>用咩牌子嘅染髮劑？</summary><p>採用日本 Milbon 專業染髮產品，喺樓上獨立染燙區進行，唔會同剪髮客人擠埋一齊。</p></details><details class="bp-faq"><summary>男仔可唔可以染髮、電髮？</summary><p>當然得，男士染髮、男仔電髮都係我哋常做嘅服務。</p></details><details class="bp-faq"><summary>使唔使預約？</summary><p>染髮、燙髮、直髮請先致電 6801 6817 預約；單剪就唔使預約，直接到店取票。</p></details><details class="bp-faq"><summary>營業時間係幾點？</summary><p>同分店一樣，星期一至日 10:00 – 20:00。</p></details>
   </section>
 
+  <section class="wrap bp-sec" id="tips">
+    <h2>染燙小知識</h2>
+    <div class="bp-vids"><figure class="bp-vid"><video src="../assets/video/k1_ranfa.mp4" poster="../assets/video/k1_ranfa.jpg" controls preload="none" playsinline></video><figcaption><b>染頭髮前後要注意咩？</b>第一次染先喺耳後試敏感、染前一日唔好洗頭、染完 48 小時內唔好洗頭，用護色洗頭水。</figcaption></figure><figure class="bp-vid"><video src="../assets/video/k2_dianfa.mp4" poster="../assets/video/k2_dianfa.jpg" controls preload="none" playsinline></video><figcaption><b>電髮點樣先可以長啲？</b>電完 48 小時唔好洗頭、唔好綁頭；電髮同染髮最好隔一至兩個星期。</figcaption></figure><figure class="bp-vid"><video src="../assets/video/k3_lazhi.mp4" poster="../assets/video/k3_lazhi.jpg" controls preload="none" playsinline></video><figcaption><b>拉直頭髮要知嘅三件事</b>做完 48–72 小時唔好洗頭、唔好綁頭；新生頭髮會再曲，一般幾個月補做髮根。</figcaption></figure></div>
+  </section>
+
+  <section class="wrap bp-sec" id="works" hidden>
+    <h2>師傅作品</h2>
+    <div class="bp-works" id="liveWorks"></div>
+    <div class="bp-gallery"></div>
+  </section>
+
   <section class="wrap bp-sec">
     <h2>點去</h2>
     <p class="bp-howto">寰宇天下地下，黑沙環中街街口。</p>
@@ -243,6 +286,22 @@
 
 <script>
 document.getElementById("year").textContent = new Date().getFullYear();
+(function () {
+  var box = document.getElementById("liveWorks"), sec = document.getElementById("works");
+  function esc(s) { return String(s || "").replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  fetch("/api/works?shop=universe").then(function (r) { return r.json(); }).then(function (d) {
+    if (!d.works || !d.works.length) return;
+    box.innerHTML = d.works.map(function (w) {
+      var m = w.video ? '<video src="' + w.video + '" poster="' + (w.poster || "") + '" controls preload="none" playsinline></video>'
+        : w.photos.map(function (p) { return '<img src="' + p + '" alt="' + esc(w.title) + '" loading="lazy">'; }).join("");
+      return '<article class="bp-wk"><div class="bp-wk-m' + (w.video ? " v" : "") + '">' + m + '</div><div class="bp-wk-t"><h3>' + esc(w.title) + '</h3>'
+        + (w.problem ? '<p><b>客人想要：</b>' + esc(w.problem) + '</p>' : "")
+        + (w.solution ? '<p><b>師傅點做：</b>' + esc(w.solution) + '</p>' : "")
+        + '<small>師傅 ' + esc(w.name) + '</small></div></article>';
+    }).join("");
+    sec.hidden = false;
+  }).catch(function () {});
+})();
 var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
 if (t && l) t.addEventListener("click", function () { l.classList.toggle("open"); });
 </script>
