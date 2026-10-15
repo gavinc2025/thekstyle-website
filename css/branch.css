@@ -104,3 +104,7 @@
 .bp-live.open::before { background: #3ddc84; box-shadow: 0 0 0 4px rgba(61,220,132,.22); }
 .bp-live.closed { color: rgba(247,244,236,.75); }
 .bp-live.closed::before { background: #8a9491; }
+
+/* ---- 師傅作品（寰宇天下） ---- */
+.bp-work img { aspect-ratio: 3 / 4; }
+.bp-work figcaption { padding: 8px 12px; font-size: .9rem; color: var(--muted); background: var(--white); }
