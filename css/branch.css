@@ -125,3 +125,4 @@
 .bp-vid video { display: block; width: 100%; aspect-ratio: 9 / 16; background: #000; object-fit: contain; }
 .bp-vid figcaption { padding: 10px 14px 12px; font-size: .9rem; line-height: 1.7; color: var(--muted); }
 .bp-vid figcaption b { display: block; color: var(--teal-deep); font-size: 1rem; }
+.bp-more { margin: 18px 0 0; text-align: center; }

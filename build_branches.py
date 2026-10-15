@@ -40,7 +40,13 @@ UNIVERSE_FAQ = [
 
 # 染燙小知識短片（VoxPix 出片，女聲；只放自己網站，唔放有留言嘅平台——用戶 10/16）
 # (檔名, 標題, 描述)；檔案喺 assets/video/<檔名>.mp4 ＋ <檔名>.jpg 封面
+# ⚠️新片放最前（寰宇天下頁只顯示頭 4 條，其餘喺 /tips 專頁）；分批上線：出好片抄去 assets/video 先加入呢度
 KNOW_VIDEOS = [
+    ("k8_lvke_xitou", "来澳门玩，想洗个头？", "游客洗头 MOP 200，包吹干、不包造型；全澳上手屋只有寰宇天下店提供。"),
+    ("k7_youshui", "染完頭髮游水會唔會甩色？", "游水、玩海水前後做好幾步，減少氯水同海水傷害染過嘅頭髮。"),
+    ("k6_tuise", "染完好快褪色點算？", "染完頭髮好快褪色？太陽、洗頭、吹頭三樣日常習慣要留意。"),
+    ("k5_nanshi_ranse", "男士染髮點揀色？", "男仔第一次染髮唔知揀咩色？記住「三度以內」同「染深比染淺少傷」。"),
+    ("k4_baitou", "白頭髮點染先自然？", "白頭髮愈來愈多？教你揀啱染膏、揀啱顏色，同點樣補髮根。"),
     ("k1_ranfa", "染頭髮前後要注意咩？", "第一次染先喺耳後試敏感、染前一日唔好洗頭、染完 48 小時內唔好洗頭，用護色洗頭水。"),
     ("k2_dianfa", "電髮點樣先可以長啲？", "電完 48 小時唔好洗頭、唔好綁頭；電髮同染髮最好隔一至兩個星期。"),
     ("k3_lazhi", "拉直頭髮要知嘅三件事", "做完 48–72 小時唔好洗頭、唔好綁頭；新生頭髮會再曲，一般幾個月補做髮根。"),
@@ -200,13 +206,15 @@ def page(b, others):
 })();""" % b["slug"]
     vid_html = ""
     if b.get("videos"):
+        more = len(b["videos"]) > 4
         cards = "".join(
             f'<figure class="bp-vid"><video src="../assets/video/{f}.mp4" poster="../assets/video/{f}.jpg" controls preload="none" playsinline></video>'
-            f'<figcaption><b>{e(t)}</b>{e(d)}</figcaption></figure>' for f, t, d in b["videos"])
+            f'<figcaption><b>{e(t)}</b>{e(d)}</figcaption></figure>' for f, t, d in b["videos"][:4])
         vid_html = f"""
   <section class="wrap bp-sec" id="tips">
     <h2>染燙小知識</h2>
     <div class="bp-vids">{cards}</div>
+    {f'<p class="bp-more"><a class="btn btn-teal" href="../tips">睇晒全部 {len(b["videos"])} 條染燙小知識 →</a></p>' if more else ''}
   </section>
 """
         vids_ld = [{"@context": "https://schema.org", "@type": "VideoObject", "name": t, "description": d,
@@ -402,6 +410,81 @@ if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"
 """
 
 
+def tips_page():
+    e = html.escape
+    cards = "".join(
+        f'<figure class="bp-vid" id="{f}"><video src="assets/video/{f}.mp4" poster="assets/video/{f}.jpg" controls preload="none" playsinline></video>'
+        f'<figcaption><b>{e(t)}</b>{e(d)}</figcaption></figure>' for f, t, d in KNOW_VIDEOS)
+    ld = [{"@context": "https://schema.org", "@type": "VideoObject", "name": t, "description": d,
+           "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg", "contentUrl": f"{SITE}/assets/video/{f}.mp4",
+           "uploadDate": "2026-10-16", "inLanguage": "yue"} for f, t, d in KNOW_VIDEOS]
+    title = "染髮、電髮、拉直小知識短片｜上手屋寰宇天下店"
+    desc = (f"{len(KNOW_VIDEOS)} 條 30 秒廣東話短片：白頭髮點染、男士染髮揀色、染完褪色、電髮打理、拉直注意事項、游客洗头。"
+            f"上手屋寰宇天下店，染／燙／直 MOP 580 起，致電 {PHONE_TXT} 預約。")
+    return f"""<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{e(title)}</title>
+<meta name="description" content="{e(desc)}">
+<meta name="keywords" content="染髮知識,電髮打理,拉直頭髮,白頭髮染髮,男士染髮,染髮褪色,澳門染髮,黑沙環染髮,澳门洗头,上手屋">
+<meta name="theme-color" content="#2D8484">
+<link rel="canonical" href="{SITE}/tips">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{e(title)}">
+<meta property="og:description" content="{e(desc)}">
+<meta property="og:url" content="{SITE}/tips">
+<meta property="og:image" content="{SITE}/assets/video/{KNOW_VIDEOS[0][0]}.jpg">
+<meta property="og:locale" content="zh_HK">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/branch.css">
+<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False, indent=2)}</script>
+</head>
+<body class="branch-page">
+<nav class="nav scrolled" id="nav">
+  <div class="wrap">
+    <a href="index.html" class="nav-logo"><img src="assets/img/logo-white.png" alt="The K Style 上手屋"><span class="zh">上手屋</span></a>
+    <div class="nav-links" id="navLinks">
+      <a href="branches/universe#services">染燙收費</a>
+      <a href="index.html#branches">所有分店</a>
+      <a href="tel:{PHONE}" class="btn btn-gold btn-sm nav-cta">致電預約</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="選單"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<header class="bp-head">
+  <div class="wrap">
+    <nav class="crumb" aria-label="麵包屑"><a href="index.html">主頁</a> ‧ <a href="branches/universe">寰宇天下店</a> ‧ <span>染燙小知識</span></nav>
+    <p class="bp-en">Hair Tips</p>
+    <h1>染燙小知識<small>{len(KNOW_VIDEOS)} 條 30 秒短片 ‧ 寰宇天下店師傅話你知</small></h1>
+    <div class="bp-cta">
+      <a class="btn btn-gold" href="tel:{PHONE}">{ICO_PHONE} 致電預約 {PHONE_TXT}</a>
+      <a class="btn btn-outline" href="branches/universe">{ICO_PIN} 寰宇天下店</a>
+    </div>
+  </div>
+</header>
+<main>
+  <section class="wrap bp-sec">
+    <div class="bp-vids">{cards}</div>
+    <p class="bp-note">染髮、燙髮（電髮）、直髮 MOP 580 起，唔分男女；只限寰宇天下店（黑沙環中街 194 號），請先致電 {PHONE_TXT} 預約。</p>
+  </section>
+</main>
+<footer class="footer"><div class="wrap footer-bottom">© <span id="year"></span> The K Style 上手屋 ‧ <a href="tel:{PHONE}">{PHONE_TXT}</a></div></footer>
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
+if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"); }});
+</script>
+</body>
+</html>
+"""
+
+
 def main():
     root = os.path.dirname(os.path.abspath(__file__))
     out = os.path.join(root, "branches")
@@ -413,8 +496,11 @@ def main():
         with open(p, "w", encoding="utf-8") as f:
             f.write(page(b, BRANCHES))
         print("寫咗", os.path.relpath(p, root), "—", b["name"], "(%d 張相、%d 張作品)" % (len(b["photos"]), len(b["works"])))
+    with open(os.path.join(root, "tips.html"), "w", encoding="utf-8") as f:
+        f.write(tips_page())
+    print("寫咗 tips.html —", len(KNOW_VIDEOS), "條知識片")
     # sitemap
-    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}" for b in BRANCHES]
+    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}" for b in BRANCHES] + [f"{SITE}/tips"]
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:
