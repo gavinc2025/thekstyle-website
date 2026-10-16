@@ -20,15 +20,15 @@ TODAY  = datetime.date.today().isoformat()
 WASH_PRICE = 200    # MOP，包吹乾、不包造型
 SERVICES = [
     ("染髮", "MOP 580 起", "男女都做；長髮按長度另加少少"),
-    ("燙髮（電髮）", "MOP 580 起", "男仔電髮、女士曲髮都得"),
-    ("直髮", "MOP 580 起", "柔順拉直"),
+    ("燙髮（電髮）", "MOP 780 起", "男仔電髮、女士曲髮都得"),
+    ("直髮", "MOP 680 起", "柔順拉直"),
 ]
 UNIVERSE_FAQ = [
     ("澳门哪里可以洗头？",
      f"上手屋只有寰宇天下店（黑沙环中街 194 号）可以洗头，MOP {WASH_PRICE}，包吹干、不包造型，不用剪发也可以。"
      f"请先致电 {PHONE_TXT} 预约；营业时间每天 10:00–20:00。"),
     ("染髮、電髮幾錢？",
-     "染髮 MOP 580 起、燙髮（電髮）MOP 580 起、直髮 MOP 580 起，唔分男女；長頭髮會按長度另加少少。實際價錢可以致電查詢。"),
+     "染髮 MOP 580 起、燙髮（電髮）MOP 780 起、直髮 MOP 680 起，唔分男女；長頭髮會按長度另加少少。實際價錢可以致電查詢。"),
     ("用咩牌子嘅染髮劑？",
      "採用日本 Milbon 專業染髮產品，喺樓上獨立染燙區進行，唔會同剪髮客人擠埋一齊。"),
     ("男仔可唔可以染髮、電髮？",
@@ -420,7 +420,7 @@ def tips_page():
            "uploadDate": "2026-10-16", "inLanguage": "yue"} for f, t, d in KNOW_VIDEOS]
     title = "染髮、電髮、拉直小知識短片｜上手屋寰宇天下店"
     desc = (f"{len(KNOW_VIDEOS)} 條 30 秒廣東話短片：白頭髮點染、男士染髮揀色、染完褪色、電髮打理、拉直注意事項、游客洗头。"
-            f"上手屋寰宇天下店，染／燙／直 MOP 580 起，致電 {PHONE_TXT} 預約。")
+            f"上手屋寰宇天下店，染髮 MOP 580 起、直髮 680 起、燙髮 780 起，致電 {PHONE_TXT} 預約。")
     return f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -471,7 +471,7 @@ def tips_page():
 <main>
   <section class="wrap bp-sec">
     <div class="bp-vids">{cards}</div>
-    <p class="bp-note">染髮、燙髮（電髮）、直髮 MOP 580 起，唔分男女；只限寰宇天下店（黑沙環中街 194 號），請先致電 {PHONE_TXT} 預約。</p>
+    <p class="bp-note">染髮 MOP 580 起、直髮 MOP 680 起、燙髮（電髮）MOP 780 起，唔分男女；只限寰宇天下店（黑沙環中街 194 號），請先致電 {PHONE_TXT} 預約。</p>
   </section>
 </main>
 <footer class="footer"><div class="wrap footer-bottom">© <span id="year"></span> The K Style 上手屋 ‧ <a href="tel:{PHONE}">{PHONE_TXT}</a></div></footer>
