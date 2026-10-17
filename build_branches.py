@@ -222,7 +222,7 @@ def page(b, others):
 """
         vids_ld = [{"@context": "https://schema.org", "@type": "VideoObject", "name": t, "description": d,
                     "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg", "contentUrl": f"{SITE}/assets/video/{f}.mp4",
-                    "uploadDate": "2026-10-16", "inLanguage": "yue"} for f, t, d in b["videos"]]
+                    "uploadDate": "2026-10-16T12:00:00+08:00", "inLanguage": "yue"} for f, t, d in b["videos"]]
     prices = "".join(f"<tr><th>{e(n)}</th><td>{e(p)}</td></tr>" for n, p in b["price"])
     nav_others = "".join(
         f'<li><a href="{o["slug"]}">{e(o["name"])}<span>{e(o["area"])}</span></a></li>'
@@ -420,7 +420,7 @@ def tips_page():
         f'<figcaption><b>{e(t)}</b>{e(d)}</figcaption></figure>' for f, t, d in KNOW_VIDEOS)
     ld = [{"@context": "https://schema.org", "@type": "VideoObject", "name": t, "description": d,
            "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg", "contentUrl": f"{SITE}/assets/video/{f}.mp4",
-           "uploadDate": "2026-10-16", "inLanguage": "yue"} for f, t, d in KNOW_VIDEOS]
+           "uploadDate": "2026-10-16T12:00:00+08:00", "inLanguage": "yue"} for f, t, d in KNOW_VIDEOS]
     title = "染髮、電髮、拉直小知識短片｜上手屋寰宇天下店"
     desc = (f"{len(KNOW_VIDEOS)} 條 30 秒廣東話短片：白頭髮點染、男士染髮揀色、染完褪色、電髮打理、拉直注意事項、游客洗头。"
             f"上手屋寰宇天下店，染髮 MOP 580 起、直髮 680 起、燙髮 780 起，致電 {PHONE_TXT} 預約。")
