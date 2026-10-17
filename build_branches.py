@@ -323,7 +323,7 @@ def page(b, others):
 <meta name="keywords" content="{e(b['kw'])},上手屋,The K Style,澳門單剪">
 <meta name="theme-color" content="#2D8484">
 <link rel="canonical" href="{SITE}/branches/{b['slug']}">
-<meta property="og:type" content="business.business">
+<meta property="og:type" content="website">
 <meta property="og:title" content="{e(title)}">
 <meta property="og:url" content="{SITE}/branches/{b['slug']}">{og_img}
 <meta property="og:description" content="{e(desc)}">
