@@ -106,6 +106,11 @@ BRANCHES = [
          live="um",   # 路由器偵測師傅返工 → 頁頂顯示「已開門」（_worker/index.js /api/status）
          photos=[("assets/img/branch/um-front.jpg", "澳門大學店門面"),
                  ("assets/img/branch/um.jpg", "澳門大學店店內座位")],
+         # 澳大45周年考試打打氣（用戶 10/21）：分店頁頂推廣區＋教學片，2027/1/31 後自動收埋
+         promo=dict(video="p1_bisheng", until="2027-01-31", link="../bisheng",
+                    h="考試打打氣 ‧ 考試必勝卡",
+                    p="慶祝澳門大學45周年校慶：2026/11/23–12/17 單剪 MOP 50（原價 60）；剪完領電子考試必勝卡，12/18–2027/1/31 再嚟減 MOP 10。",
+                    vt="考試必勝卡：點樣領、點樣用？", vd="35 秒睇晒：領卡、截圖、下次減 $10。"),
          kw="澳門大學剪髮,澳大理髮,澳大快剪,薈萃坊商場,學生剪髮",
          title="澳門大學剪髮 ‧ 學生 $54 ‧ 薈萃坊快剪"),
     dict(slug="universe", en="The Praia", area="黑沙環", name="寰宇天下店",
@@ -207,7 +212,7 @@ def page(b, others):
     sec.hidden = false;
   }).catch(function () {});
 })();""" % b["slug"]
-    vid_html = ""
+    vid_html, vids_ld = "", []
     if b.get("videos"):
         more = len(b["videos"]) > 4
         cards = "".join(
@@ -223,6 +228,22 @@ def page(b, others):
         vids_ld = [{"@context": "https://schema.org", "@type": "VideoObject", "name": t, "description": d,
                     "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg", "contentUrl": f"{SITE}/assets/video/{f}.mp4",
                     "uploadDate": "2026-10-16T12:00:00+08:00", "inLanguage": "yue"} for f, t, d in b["videos"]]
+    promo_html = ""
+    if b.get("promo"):
+        pm = b["promo"]
+        promo_html = f"""
+  <section class="wrap bp-sec" id="promo" data-until="{pm['until']}">
+    <h2>{e(pm['h'])}</h2>
+    <p>{e(pm['p'])}</p>
+    <div class="bp-vids"><figure class="bp-vid"><video src="../assets/video/{pm['video']}.mp4" poster="../assets/video/{pm['video']}.jpg" controls preload="none" playsinline></video>
+      <figcaption><b>{e(pm['vt'])}</b>{e(pm['vd'])}</figcaption></figure></div>
+    <p class="bp-more"><a class="btn btn-teal" href="{pm['link']}">領取考試必勝卡 →</a></p>
+  </section>
+  <script>(function(){{var s=document.getElementById("promo");if(new Date(Date.now()+288e5).toISOString().slice(0,10)>s.dataset.until)s.hidden=true}})();</script>
+"""
+        vids_ld = vids_ld + [{"@context": "https://schema.org", "@type": "VideoObject", "name": pm["vt"], "description": pm["vd"],
+                    "thumbnailUrl": f"{SITE}/assets/video/{pm['video']}.jpg", "contentUrl": f"{SITE}/assets/video/{pm['video']}.mp4",
+                    "uploadDate": "2026-10-21T12:00:00+08:00", "inLanguage": "yue"}]
     prices = "".join(f"<tr><th>{e(n)}</th><td>{e(p)}</td></tr>" for n, p in b["price"])
     nav_others = "".join(
         f'<li><a href="{o["slug"]}">{e(o["name"])}<span>{e(o["area"])}</span></a></li>'
@@ -261,7 +282,7 @@ def page(b, others):
                                "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in b["faq"]]}
         extra_ld = ('\n<script type="application/ld+json">'
                     + json.dumps(faq, ensure_ascii=False, indent=2) + '</script>')
-    if b.get("videos"):
+    if b.get("videos") or b.get("promo"):
         extra_ld += ('\n<script type="application/ld+json">'
                      + json.dumps(vids_ld, ensure_ascii=False, indent=2) + '</script>')
     og_img = f'\n<meta property="og:image" content="{SITE}/{b["photos"][0][0]}">' if b["photos"] else ""
@@ -374,7 +395,7 @@ def page(b, others):
 </header>
 
 <main>
-{svc_html}{vid_html}{works_html}
+{promo_html}{svc_html}{vid_html}{works_html}
   <section class="wrap bp-sec">
     <h2>點去</h2>
     <p class="bp-howto">{e(b['howto'])}</p>
