@@ -56,7 +56,8 @@ export default {
       if (name !== BOSS) extra = (await promoCard(env, data, name, today, test)) + extra;
       if (name === BOSS) extra = await worksBoss(env, code);
       else if (canWork(data, name)) extra += await worksCard(env, data, name, code);
-      return html(rosterPage(data, name, today, extra, name === BOSS ? await promoBoss(env, today) : ""));
+      // 老闆頁「必勝卡」分頁：密碼卡＋掃券（老闆都用得）＋統計
+      return html(rosterPage(data, name, today, extra, name === BOSS ? (await promoCard(env, data, name, today, test)) + await promoBoss(env, today) : "", test));
     }
     if (url.pathname.startsWith("/w/") && request.method === "GET") return workMedia(request, env, url);
     if (url.pathname.startsWith("/q/") && request.method === "GET") return html(await qPage(env, macauDate(), url.pathname.slice(3)));

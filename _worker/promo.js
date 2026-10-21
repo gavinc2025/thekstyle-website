@@ -156,7 +156,7 @@ export async function promoCard(env, data, name, today, test) {
   const claimOn = inClaim(today) || test, useOn = inUse(today) || test;
   if (!claimOn && !useOn) return "";
   const pin = claimOn ? await dailyPin(env, today) : "";
-  return `<div class="card bscard" id="bisheng">
+  return `<div class="card bscard" id="bscard">
   <div class="lbl">考試必勝卡${test ? ` <b class="leave">測試模式</b>` : ""}</div>
   ${claimOn ? `<div class="bspin"><small>今日領卡密碼（口頭講畀剪完髮嘅客）</small><b>${pin}</b>
     <div class="mates">同客講：「Google 搜『上手屋快剪』，入去輸入呢個密碼就領到 $10 券。」每日密碼唔同。</div></div>` : ""}
