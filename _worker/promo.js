@@ -15,6 +15,7 @@ export const PROMO = {
   price: 50, off: 10,
 };
 const ALPHA = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";   // 唔用 0/O/1/I/L 免得睇錯
+const REVIEW_PIN = "4545";                        // 澳大 45 周年；只限 ?test=1 而且 11/23 前
 const FAIL_MAX = 30;                              // 同一 IP 一日輸錯幾多次就停（校園 Wi-Fi 好多人共用 IP，唔好設太緊）
 const KEEP = { expirationTtl: 60 * 60 * 24 * 180 };
 
@@ -78,7 +79,9 @@ export async function claim(request, env, today, body) {
   const fails = +(await env.STATUS.get(fk)) || 0;
   if (fails >= FAIL_MAX) return json({ error: "輸錯太多次，請聽清楚師傅講嘅密碼，聽日再試" }, 429);
   const pin = String(body.pin || "").replace(/\D/g, "");
-  if (pin !== await dailyPin(env, today)) {
+  // 審批測試密碼（俾澳大審批試用；只限測試模式＋活動開始前，出嘅係測試券）
+  const reviewOk = test && pin === REVIEW_PIN;
+  if (!reviewOk && pin !== await dailyPin(env, today)) {
     await env.STATUS.put(fk, String(fails + 1), { expirationTtl: 60 * 60 * 26 });
     return json({ error: "密碼唔啱，請問返師傅今日嘅密碼" }, 400);
   }
