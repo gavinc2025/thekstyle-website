@@ -6,7 +6,9 @@
 export const TEST_DATE = "2099-12-31";
 const PRICE = { 消防: 80, 海上居: 80, 澳門大學: 54 };
 const NORMAL = { 澳門大學: 60 };   // 澳大「正常收費」每剪 $60（學校卡 $54）
-export const price = shop => PRICE[shop] || 60;
+import { promoPrice, usedCount, PROMO } from "./promo.js";
+// 澳大 11/23–12/17 活動期全部單剪 $50（promo.js）
+export const price = (shop, date) => promoPrice(shop, date) || PRICE[shop] || 60;
 // 欄：個人單剪必填；其餘留空＝冇
 const F = ["p", "t", "mp", "cash", "icbc", "card", "tip", "big", "normal"];
 const SHOP_F = ["t", "mp", "cash", "icbc", "card", "normal"];   // 全店數：同舖多人時只需一個人填
@@ -23,15 +25,16 @@ const addDays = (d, n) => new Date(Date.parse(d + "T00:00:00Z") + n * 864e5).toI
 const bare = n => n.replace(/[◆●]$/, "");
 
 // 核對（員工交數時即刻睇；NAS 入數時再用全舖資料核一次）
-export function checks(shop, r, mates = []) {
-  const f = r.f, w = [], pr = price(shop);
+// vouchers＝當日澳大核銷咗幾張必勝卡（每張收 $50，唔計入正常收費）
+export function checks(shop, r, mates = [], vouchers = 0) {
+  const f = r.f, w = [], pr = price(shop, r.date), promo = pr !== price(shop);
   if (f.t != null && f.p > f.t) w.push(`個人 ${f.p} 多過全店單剪客流 ${f.t}`);
   if (f.p > 80) w.push(`個人 ${f.p} 剪好多，請再睇吓`);
   if (f.mp != null && f.t != null) {
-    const nrm = f.normal || 0;
-    const exp = f.t * pr + nrm * ((NORMAL[shop] || pr) - pr);
+    const nrm = promo ? 0 : f.normal || 0;
+    const exp = f.t * pr + nrm * ((NORMAL[shop] || pr) - pr) - vouchers * (pr - PROMO.price);
     const got = f.mp + ((f.cash || 0) + (f.icbc || 0) + (f.card || 0)) * pr;
-    if (exp !== got) w.push(`全店 ${f.t}×$${pr}${nrm ? `（正常收費 ${nrm}）` : ""}＝$${exp}，但澳門通 $${f.mp}＋現金/工銀/消卡 ${(f.cash || 0) + (f.icbc || 0) + (f.card || 0)} 剪×$${pr}＝$${got}（差 $${exp - got}）`);
+    if (exp !== got) w.push(`全店 ${f.t}×$${pr}${nrm ? `（正常收費 ${nrm}）` : ""}${vouchers ? `（必勝卡 ${vouchers} 張×$${PROMO.price}）` : ""}＝$${exp}，但澳門通 $${f.mp}＋現金/工銀/消卡 ${(f.cash || 0) + (f.icbc || 0) + (f.card || 0)} 剪×$${pr}＝$${got}（差 $${exp - got}）`);
   }
   const t = f.t != null ? f.t : (mates.find(m => m.f.t != null) || {}).f?.t;
   if (t != null && mates.length) {
@@ -128,7 +131,8 @@ export async function postReport(request, env, data, name, today, body) {
   idx[key] = rec.rev;
   await env.STATUS.put(`repidx:${date}`, JSON.stringify(idx), ttl);
   const mates = (await dayReports(env, date, body.shop)).filter(r => r.name !== name);
-  return json({ ok: true, rev: rec.rev, n: rec.n, date, warns: checks(body.shop, rec, mates) });
+  const vouchers = body.shop === PROMO.shop && !test ? await usedCount(env, date) : 0;
+  return json({ ok: true, rev: rec.rev, n: rec.n, date, warns: checks(body.shop, rec, mates, vouchers) });
 }
 
 // NAS 用（Bearer roster token）
@@ -213,7 +217,8 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
     test, today, yest, name, defDate, shops: data.shops, st, photoReq, max: PHOTO_MAX,
     def: { [today]: myShop(today), [yest]: myShop(yest), [TEST_DATE]: myShop(today) },
     alone: { [today]: alone(today), [yest]: alone(yest), [TEST_DATE]: alone(today) },
-    price: Object.fromEntries(data.shops.map(s => [s, price(s)])),
+    price: Object.fromEntries(data.shops.map(s => [s, price(s, defDate)])),
+    promo: { [today]: !!promoPrice(PROMO.shop, today), [yest]: !!promoPrice(PROMO.shop, yest) },
   };
   const md = d => `${+d.slice(5, 7)}/${+d.slice(8, 10)}`;
   const num = (id, label, hint = "", max = "") => `<label class="rf" id="w-${id}"><span>${label}${hint ? `<small>${hint}</small>` : ""}</span><input id="f-${id}" type="number" inputmode="numeric" min="0" step="1"${max ? ` max="${max}"` : ""}></label>`;
@@ -260,7 +265,7 @@ document.querySelectorAll(".phrow input[type=file]").forEach(inp=>inp.onchange=a
 document.querySelectorAll(".thumbs").forEach(t=>t.onclick=e=>{const b=e.target.closest("b");if(!b)return;P[b.dataset.k].splice(+b.dataset.i,1);thumbs(b.dataset.k)});
 function load(){const d=date(),s=$("r-shop").value,k=d+":"+s,x=C.st[k]||{},al=(C.alone[d]||{})[s]!==false;
   P.mp=[];P.big=[];$("pw-big").hidden=s!=="海上居";
-  $("w-big").hidden=s!=="海上居";$("w-normal").hidden=s!=="澳門大學";$("w-t").hidden=al;
+  $("w-big").hidden=s!=="海上居";$("w-normal").hidden=s!=="澳門大學"||!!(C.promo||{})[d];$("w-t").hidden=al;
   $("shopnote").textContent=al?"（得你一個，照填）":x.shopBy&&!(x.mine&&SF.some(f=>x.mine.f[f]!=null))?"（"+x.shopBy+" 已經填咗，唔使再填）":"（同舖多過一個人，只需一位同事填）";
   const m=x.mine;F.forEach(f=>$("f-"+f).value=m&&m.f[f]!=null?m.f[f]:"");$("f-note").value=m?m.note:"";
   $("r-status").innerHTML=m?(m.ok?"✅ 已入數（"+m.at.slice(11,16)+" 交）":"⏳ 已交（"+m.at.slice(11,16)+"），等入數")+"　可以改":(x.shopBy?x.shopBy+" 已交全店數：客流 "+(x.shopF.t??"-")+"、澳門通 $"+(x.shopF.mp??"-"):"未交");

@@ -408,6 +408,7 @@ document.getElementById("year").textContent = new Date().getFullYear();{live_js}
 var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
 if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"); }});
 </script>
+<script src="../js/bisheng-banner.js" defer></script>
 </body>
 </html>
 """
@@ -483,6 +484,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
 var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
 if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"); }});
 </script>
+<script src="../js/bisheng-banner.js" defer></script>
 </body>
 </html>
 """
@@ -503,7 +505,7 @@ def main():
         f.write(tips_page())
     print("寫咗 tips.html —", len(KNOW_VIDEOS), "條知識片")
     # sitemap
-    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}" for b in BRANCHES] + [f"{SITE}/tips"]
+    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}" for b in BRANCHES] + [f"{SITE}/tips", f"{SITE}/bisheng"]
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:

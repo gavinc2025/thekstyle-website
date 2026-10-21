@@ -4,6 +4,7 @@
 //   資料由 NAS 更表推上嚟（POST /api/roster），見 ~/salon/salon_roster_push.py
 import { REPORT_CSS } from "./report.js";
 import { WORKS_CSS } from "./works.js";
+import { PROMO_CSS } from "./promo.js";
 export const BOSS = "老闆";
 const WK = "日一二三四五六";
 const DAYS = 60;
@@ -232,14 +233,15 @@ tr.sub th,tr.sub td{font-size:.85rem;color:var(--muted)}.me{background:#fdf1c7;b
 .note{font-size:.78rem;color:var(--muted);margin-top:16px}
 ${REPORT_CSS}
 ${WORKS_CSS}
+${PROMO_CSS}
 </style></head><body>
 <header><h1>${esc(title)}</h1><p>${sub}</p></header>
 <main>${body}</main>${TAB_JS}</body></html>`;
 
 const updated = data => `更新：${esc(data.updated.replace("T", " ").slice(0, 16))}`;
 
-export function rosterPage(data, name, today, extra = "") {
-  if (name === BOSS) return bossPage(data, today, extra);
+export function rosterPage(data, name, today, extra = "", bisheng = "") {
+  if (name === BOSS) return bossPage(data, today, extra, bisheng);
   const home = data.home[name] || null;
   const days = data.days.filter(d => d.d >= today).slice(0, DAYS);
   const card = (day, label) => {
@@ -262,7 +264,7 @@ ${tabs([["mine", "我嘅更"], ["all", "全店更表"]])}
 <p class="note">藍色＝去其他舖　（頂）＝頂班　（調）＝休息日調咗返工<br>以呢頁為準；工資、假期或者更表有問題，歡迎打電話問老闆。<br>呢條連結係你專用，有你嘅工資資料，唔好轉發俾其他人。</p>`);
 }
 
-function bossPage(data, today, works = "") {
+function bossPage(data, today, works = "", bisheng = "") {
   const days = data.days.filter(d => d.d >= today).slice(0, DAYS);
   const names = Object.keys(data.home);
   const lb = data.leave_balance;
@@ -273,9 +275,10 @@ function bossPage(data, today, works = "") {
   }).join("");
   const total = lb ? num(names.reduce((s, n) => s + (lb.balance[n] || 0), 0)) : "—";
   return page("上手屋更表 ‧ 老闆", `${updated(data)}　全部員工`, `
-${tabs([["all", "全店更表"], ["works", "作品"], ["perf", "業績"], ["bal", "假期結餘"], ["pay", "工資"], ["person", "個人更表"]])}
+${tabs([["all", "全店更表"], ["works", "作品"], ["bisheng", "必勝卡"], ["perf", "業績"], ["bal", "假期結餘"], ["pay", "工資"], ["person", "個人更表"]])}
 <div id="all">${allShops(data, days, today, null)}</div>
 <div id="works" hidden>${works}</div>
+<div id="bisheng" hidden>${bisheng}</div>
 <div id="perf" hidden>${perfBoss(data, today)}</div>
 <div id="bal" hidden>
   <p class="mates">${lb ? `截至${esc(lb.label)}（已核對）；每月尾計完假期先更新` : "未有假期結餘資料"}</p>

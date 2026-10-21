@@ -5,10 +5,12 @@
 //   POST /api/roster  NAS 推員工更表（Bearer ROSTER token）→ KV "roster"
 //   GET  /r/<專屬碼>  員工更表頁（見 roster.js；唔俾 Google 收錄）＋報數卡（?test=1 測試模式）
 //   /api/work、/api/work-up、/api/works、/w/<id>/<檔>、/api/works-nas…  師傅作品（見 works.js）
+//   /bisheng 領考試必勝卡：POST /api/bisheng/claim、GET /api/bisheng/v、POST /api/bisheng/redeem（師傅）、GET /api/bisheng/used（NAS）；/q/<券號> 客掃自己張券（見 promo.js）
 //   POST /api/report  員工交數（body 帶專屬碼）；/api/reports、/api/report-ack、/api/report-purge 俾 NAS 用（見 report.js）
 // 其餘網址照出靜態檔（wrangler.jsonc 只將 /api/* 交畀呢個程式）
 import { rosterPage, goneHtml, BOSS } from "./roster.js";
 import { reportCard, reportState, postReport, nasApi } from "./report.js";
+import { claim, view, redeem, nasUsed, qPage, promoCard, promoBoss } from "./promo.js";
 import { canWork, worksCard, worksBoss, pendingCount, workApi, workUpload, worksPublic, workMedia, worksNas } from "./works.js";
 
 const SHOPS = new Set(["um", "nanjing"]);  // 澳大店（SH06）、消防局店（SH04）
@@ -51,11 +53,13 @@ export default {
         extra = reportCard(data, name, today, await reportState(env, name, today, test), test, hour, env.REPORT_PHOTO_REQUIRED === "1");
       }
       // 師傅作品：海上居、澳大師傅上載；老闆頁「作品」分頁批准
+      if (name !== BOSS) extra = (await promoCard(env, data, name, today, test)) + extra;
       if (name === BOSS) extra = await worksBoss(env, code);
       else if (canWork(data, name)) extra += await worksCard(env, data, name, code);
-      return html(rosterPage(data, name, today, extra));
+      return html(rosterPage(data, name, today, extra, name === BOSS ? await promoBoss(env, today) : ""));
     }
     if (url.pathname.startsWith("/w/") && request.method === "GET") return workMedia(request, env, url);
+    if (url.pathname.startsWith("/q/") && request.method === "GET") return html(await qPage(env, macauDate(), url.pathname.slice(3)));
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
 
     if (url.pathname === "/api/works" && request.method === "GET") return worksPublic(env, url);
@@ -74,6 +78,27 @@ export default {
       if (!token || (await sha256hex(token)) !== env.ROSTER_TOKEN_SHA256) return json({ error: "auth" }, 401);
       const r = await worksNas(request, env, url);
       if (r) return r;
+    }
+
+    if (url.pathname === "/api/bisheng/claim" && request.method === "POST") {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "body" }, 400); }
+      return claim(request, env, macauDate(), body || {});
+    }
+    if (url.pathname === "/api/bisheng/v" && request.method === "GET") return view(env, macauDate(), url.searchParams.get("id"));
+    if (url.pathname === "/api/bisheng/redeem" && request.method === "POST") {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "body" }, 400); }
+      const code = String((body && body.code) || "").replace(/[^A-Za-z0-9_-]/g, "");
+      const data = /^[A-Za-z0-9_-]{8,64}$/.test(code) && await env.STATUS.get("roster", "json");
+      const name = data && data.links[await sha256hex(code)];
+      if (!name) return json({ error: "連結無效" }, 401);
+      return redeem(env, data, name, macauDate(), body);
+    }
+    if (url.pathname === "/api/bisheng/used" && request.method === "GET") {
+      const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+      if (!token || (await sha256hex(token)) !== env.ROSTER_TOKEN_SHA256) return json({ error: "auth" }, 401);
+      return nasUsed(env, url);
     }
 
     if (url.pathname === "/api/report" && request.method === "POST") {
