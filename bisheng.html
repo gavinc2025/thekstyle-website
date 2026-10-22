@@ -17,26 +17,44 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- 10/22：原本用 SaleEvent，GSC 報「performer 未填」；Google 活動指引唔准將優惠／減價標做活動 → 改用 WebPage＋HairSalon makesOffer -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SaleEvent",
-  "name": "上手屋快剪 澳門大學店 ‧ 考試打打氣（慶祝澳門大學45周年校慶）",
-  "description": "活動期間單剪 MOP 50（原價 MOP 60）；剪完領電子考試必勝卡，2026/12/18–2027/1/31 再光顧減 MOP 10。",
-  "startDate": "2026-11-23T10:00+08:00",
-  "endDate": "2026-12-17T20:00+08:00",
-  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-  "eventStatus": "https://schema.org/EventScheduled",
-  "image": "https://thekstyle.com/assets/img/branch/um-front.jpg",
+  "@type": "WebPage",
+  "name": "考試必勝卡｜上手屋快剪 澳門大學店",
   "url": "https://thekstyle.com/bisheng",
-  "location": {
+  "inLanguage": "zh-Hant",
+  "description": "慶祝澳門大學45周年校慶：2026/11/23–12/17 單剪 MOP 50（原價 60）；剪完領電子考試必勝卡，2026/12/18–2027/1/31 再光顧減 MOP 10。",
+  "mainEntity": {
     "@type": "HairSalon",
+    "@id": "https://thekstyle.com/branches/um#shop",
     "name": "上手屋單剪專門店（澳門大學店）",
-    "address": {"@type": "PostalAddress", "streetAddress": "大學大馬路 澳門大學 薈萃坊 S8 座 2 樓 2011 室", "addressLocality": "氹仔", "addressCountry": "MO"},
-    "telephone": "+85368016817"
-  },
-  "organizer": {"@type": "Organization", "name": "上手屋", "url": "https://thekstyle.com/"},
-  "offers": {"@type": "Offer", "price": "50", "priceCurrency": "MOP", "availability": "https://schema.org/InStock", "validFrom": "2026-11-23", "url": "https://thekstyle.com/bisheng"}
+    "url": "https://thekstyle.com/branches/um",
+    "telephone": "+85368016817",
+    "image": "https://thekstyle.com/assets/img/branch/um-front.jpg",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "大學大馬路 澳門大學 薈萃坊 S8 座 2 樓 2011 室",
+      "addressLocality": "氹仔",
+      "addressCountry": "MO"
+    },
+    "makesOffer": [
+      {
+        "@type": "Offer",
+        "name": "考試期單剪優惠",
+        "price": "50",
+        "priceCurrency": "MOP",
+        "validFrom": "2026-11-23",
+        "validThrough": "2026-12-17",
+        "url": "https://thekstyle.com/bisheng",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "單剪"
+        }
+      }
+    ]
+  }
 }
 </script>
 <script type="application/ld+json">
