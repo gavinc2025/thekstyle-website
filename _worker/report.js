@@ -10,8 +10,10 @@ import { promoPrice, usedCount, PROMO } from "./promo.js";
 // 澳大 11/23–12/17 活動期全部單剪 $50（promo.js）
 export const price = (shop, date) => promoPrice(shop, date) || PRICE[shop] || 60;
 // 欄：個人單剪必填；其餘留空＝冇
-const F = ["p", "t", "mp", "cash", "icbc", "card", "tip", "big", "normal"];
-const SHOP_F = ["t", "mp", "cash", "icbc", "card", "normal"];   // 全店數：同舖多人時只需一個人填
+const F = ["p", "t", "mp", "pre", "cash", "icbc", "card", "tip", "big", "normal"];
+const SHOP_F = ["t", "mp", "pre", "cash", "icbc", "card", "normal"];   // 全店數：同舖多人時只需一個人填
+// pre＝預付金額：客人預先俾錢（例電子消費券充值）、今日未剪；已包喺澳門通入面，核數時扣返（用戶 10/28：代收，唔計當月業績）
+//   客人返嚟剪嗰日填「消卡剪數」
 const ICBC_MAX = 50;   // 10/16 用戶：工銀剪數係「剪數」唔係金額（強 10/15 填咗 $300），超過 50 唔俾交
 const PHOTO_KINDS = ["mp", "big"];   // 單據相：澳門通、大頭工銀（海上居）
 const PHOTO_MAX = { mp: 3, big: 10 };   // 每類最多幾張（用戶 10/9：大頭工銀 10 張）；TG 一組最多 10 張，每類分開發
@@ -30,11 +32,13 @@ export function checks(shop, r, mates = [], vouchers = 0) {
   const f = r.f, w = [], pr = price(shop, r.date), promo = pr !== price(shop);
   if (f.t != null && f.p > f.t) w.push(`個人 ${f.p} 多過全店單剪客流 ${f.t}`);
   if (f.p > 80) w.push(`個人 ${f.p} 剪好多，請再睇吓`);
+  if (f.pre && f.pre > (f.mp || 0)) w.push(`預付 $${f.pre} 多過澳門通 $${f.mp || 0}（預付應該包喺澳門通入面）`);
   if (f.mp != null && f.t != null) {
     const nrm = promo ? 0 : f.normal || 0;
     const exp = f.t * pr + nrm * ((NORMAL[shop] || pr) - pr) - vouchers * (pr - PROMO.price);
-    const got = f.mp + ((f.cash || 0) + (f.icbc || 0) + (f.card || 0)) * pr;
-    if (exp !== got) w.push(`全店 ${f.t}×$${pr}${nrm ? `（正常收費 ${nrm}）` : ""}${vouchers ? `（必勝卡 ${vouchers} 張×$${PROMO.price}）` : ""}＝$${exp}，但澳門通 $${f.mp}＋現金/工銀/消卡 ${(f.cash || 0) + (f.icbc || 0) + (f.card || 0)} 剪×$${pr}＝$${got}（差 $${exp - got}）`);
+    const pre = f.pre || 0;
+    const got = f.mp - pre + ((f.cash || 0) + (f.icbc || 0) + (f.card || 0)) * pr;
+    if (exp !== got) w.push(`全店 ${f.t}×$${pr}${nrm ? `（正常收費 ${nrm}）` : ""}${vouchers ? `（必勝卡 ${vouchers} 張×$${PROMO.price}）` : ""}＝$${exp}，但澳門通 $${f.mp}${pre ? `－預付 $${pre}` : ""}＋現金/工銀/消卡 ${(f.cash || 0) + (f.icbc || 0) + (f.card || 0)} 剪×$${pr}＝$${got}（差 $${exp - got}）`);
   }
   const t = f.t != null ? f.t : (mates.find(m => m.f.t != null) || {}).f?.t;
   if (t != null && mates.length) {
@@ -231,7 +235,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   <div id="r-status" class="mates"></div>
   ${num("p", "個人單剪", "（必填）")}
   <div class="rsec" id="shopsec"><div class="rsh">全店數 <small id="shopnote"></small></div>
-    ${num("t", "全店單剪客流")}${num("mp", "澳門通金額 $")}${num("cash", "現金剪數", "（冇就唔使填）")}${num("icbc", "工銀剪數", "（填幾多剪，唔係金額！冇就唔使填）", ICBC_MAX)}${num("card", "消卡剪數", "（冇就唔使填）")}${num("normal", "正常收費剪數", "（$60 嗰啲；冇就唔使填）")}
+    ${num("t", "全店單剪客流")}${num("mp", "澳門通金額 $")}${num("pre", "預付金額 $", "（客人預先俾錢、今日未剪，已包喺澳門通入面；冇就唔使填）")}${num("cash", "現金剪數", "（冇就唔使填）")}${num("icbc", "工銀剪數", "（填幾多剪，唔係金額！冇就唔使填）", ICBC_MAX)}${num("card", "消卡剪數", "（冇就唔使填）")}${num("normal", "正常收費剪數", "（$60 嗰啲；冇就唔使填）")}
   </div>
   ${num("big", "大頭工銀 $", "（冇就唔使填）")}${num("tip", "小費 $", "（冇就唔使填）")}
   <div class="rsec"><div class="rsh">單據相</div>
@@ -247,7 +251,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
 </div>
 <script>
 (()=>{const C=${JSON.stringify(cfg).replace(/</g, "\\u003c")};
-const $=id=>document.getElementById(id),F=["p","t","mp","cash","icbc","card","tip","big","normal"],SF=["t","mp","cash","icbc","card","normal"];
+const $=id=>document.getElementById(id),F=["p","t","mp","pre","cash","icbc","card","tip","big","normal"],SF=["t","mp","pre","cash","icbc","card","normal"];
 const date=()=>C.test?"${TEST_DATE}":$("r-date").value;
 if(!C.test)$("r-date").value=C.defDate;
 const ds=C.def[date()];if(ds)$("r-shop").value=ds;
