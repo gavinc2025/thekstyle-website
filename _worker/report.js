@@ -239,6 +239,7 @@ export function reportCard(data, name, today, st, test, hour, photoReq = false) 
   </div>
   ${num("big", "大頭工銀 $", "（冇就唔使填）")}${num("tip", "小費 $", "（冇就唔使填）")}
   <div class="rsec"><div class="rsh">單據相</div>
+    <div class="phtip">📌 <b>影相要求</b>（老闆要逐張對數）<br>① <b>直影</b>：單據字向上，唔好打橫或者打斜<br>② 一張相<b>最多 3–4 張單</b>，平放、唔好重疊<br>③ 每張單嘅<b>「賬單號」同「金額」要完整入鏡</b>，唔好俾相邊裁走<br>④ 唔好反光、唔好陰影</div>
     ${[["mp", "澳門通單據", photoReq ? "（有填澳門通就一定要影）" : "（可以唔影）"], ["big", "大頭工銀單據", "（有填大頭工銀就一定要影）"]].map(([k, lab, hint]) => `<div class="phrow" id="pw-${k}">
       <label class="phbig">📷 影${lab}<input type="file" accept="image/*" capture="environment" data-k="${k}"></label>
       <div class="phsub"><small>${hint}　最多 ${PHOTO_MAX[k]} 張</small><label class="phalt">或者揀相<input type="file" accept="image/*" multiple data-k="${k}"></label></div>
@@ -309,7 +310,7 @@ export const REPORT_CSS = `
 .rf[hidden]{display:none}.phrow{padding:8px 0;border-bottom:1px solid #f0eee8}.phrow[hidden]{display:none}
 .phbig{display:block;text-align:center;padding:16px 10px;border:2px solid var(--teal);border-radius:12px;color:var(--teal);background:#fff;font-size:1.2rem;font-weight:700}
 .phbig:active{background:#e6f2f2}.phbig input,.phalt input{display:none}
-.phsub{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.phsub small{color:var(--muted);font-size:.82rem}
+.phtip{background:#fff7e0;border:1px solid #f0d58a;border-radius:8px;padding:8px 10px;margin:6px 0 4px;font-size:.88rem;line-height:1.6}.phsub{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.phsub small{color:var(--muted);font-size:.82rem}
 .phalt{color:var(--teal);text-decoration:underline;font-size:.95rem;padding:6px 2px}
 .phst{font-size:1rem;margin-top:4px}.rerr.big{font-size:1.15rem;font-weight:700}.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.th{position:relative}
 .th img{width:84px;height:84px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
