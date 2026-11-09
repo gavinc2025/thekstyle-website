@@ -7,7 +7,8 @@ export const TEST_DATE = "2099-12-31";
 const PRICE = { 消防: 80, 海上居: 80, 澳門大學: 54 };
 const NORMAL = { 澳門大學: 60 };   // 澳大「正常收費」每剪 $60（學校卡 $54）
 import { promoPrice, usedCount, PROMO } from "./promo.js";
-// 澳大 11/23–12/17 活動期全部單剪 $50（promo.js）
+import { usedCount as xsUsed } from "./xinsheng.js";
+// 澳大 11/23–12/17 活動期、2027/1/10 開放日全部單剪 $50（promo.js）
 export const price = (shop, date) => promoPrice(shop, date) || PRICE[shop] || 60;
 // 欄：個人單剪必填；其餘留空＝冇
 const F = ["p", "t", "mp", "pre", "cash", "icbc", "card", "tip", "big", "normal"];
@@ -38,7 +39,7 @@ export function checks(shop, r, mates = [], vouchers = 0) {
     const exp = f.t * pr + nrm * ((NORMAL[shop] || pr) - pr) - vouchers * (pr - PROMO.price);
     const pre = f.pre || 0;
     const got = f.mp - pre + ((f.cash || 0) + (f.icbc || 0) + (f.card || 0)) * pr;
-    if (exp !== got) w.push(`全店 ${f.t}×$${pr}${nrm ? `（正常收費 ${nrm}）` : ""}${vouchers ? `（必勝卡 ${vouchers} 張×$${PROMO.price}）` : ""}＝$${exp}，但澳門通 $${f.mp}${pre ? `－預付 $${pre}` : ""}＋現金/工銀/消卡 ${(f.cash || 0) + (f.icbc || 0) + (f.card || 0)} 剪×$${pr}＝$${got}（差 $${exp - got}）`);
+    if (exp !== got) w.push(`全店 ${f.t}×$${pr}${nrm ? `（正常收費 ${nrm}）` : ""}${vouchers ? `（優惠券 ${vouchers} 張×$${PROMO.price}）` : ""}＝$${exp}，但澳門通 $${f.mp}${pre ? `－預付 $${pre}` : ""}＋現金/工銀/消卡 ${(f.cash || 0) + (f.icbc || 0) + (f.card || 0)} 剪×$${pr}＝$${got}（差 $${exp - got}）`);
   }
   const t = f.t != null ? f.t : (mates.find(m => m.f.t != null) || {}).f?.t;
   if (t != null && mates.length) {
@@ -135,7 +136,8 @@ export async function postReport(request, env, data, name, today, body) {
   idx[key] = rec.rev;
   await env.STATUS.put(`repidx:${date}`, JSON.stringify(idx), ttl);
   const mates = (await dayReports(env, date, body.shop)).filter(r => r.name !== name);
-  const vouchers = body.shop === PROMO.shop && !test ? await usedCount(env, date) : 0;
+  // 必勝卡＋新生見面券（兩樣都係每張收 $50）
+  const vouchers = body.shop === PROMO.shop && !test ? await usedCount(env, date) + await xsUsed(env, date) : 0;
   return json({ ok: true, rev: rec.rev, n: rec.n, date, warns: checks(body.shop, rec, mates, vouchers) });
 }
 

@@ -14,6 +14,8 @@ export const PROMO = {
   useFrom: "2026-12-18", useTo: "2027-01-31",   // 使用期（活動完 45 日）
   price: 50, off: 10,
 };
+// 2027/1/10 澳大開放日：全日單剪 $50；必勝卡唔可以疊用（用戶 11/9 定，留返 1/31 前用；新生見面券見 xinsheng.js）
+export const OPENDAY = "2027-01-10";
 const ALPHA = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";   // 唔用 0/O/1/I/L 免得睇錯
 const REVIEW_PIN = "4545";                        // 澳大 45 周年；只限 ?test=1 而且 11/23 前
 const FAIL_MAX = 30;                              // 同一 IP 一日輸錯幾多次就停（校園 Wi-Fi 好多人共用 IP，唔好設太緊）
@@ -30,7 +32,7 @@ const bare = n => n.replace(/[◆●]$/, "");
 export const inClaim = d => d >= PROMO.start && d <= PROMO.end;
 export const inUse = d => d >= PROMO.useFrom && d <= PROMO.useTo;
 // 活動期澳大全部單剪 $50（唔分學校卡／正常收費）
-export const promoPrice = (shop, date) => shop === PROMO.shop && date && inClaim(date) ? PROMO.price : null;
+export const promoPrice = (shop, date) => shop === PROMO.shop && date && (inClaim(date) || date === OPENDAY) ? PROMO.price : null;
 
 async function secret(env) {
   let s = await env.STATUS.get("bs:secret");
@@ -59,6 +61,7 @@ function state(v, today) {
   if (v.test) return today < PROMO.start ? { ok: true, code: "test", msg: "測試券（唔計數）" } : { ok: false, code: "test", msg: "測試券，活動開始後已失效" };
   if (today < PROMO.useFrom) return { ok: false, code: "early", msg: `${ymd(PROMO.useFrom)} 起先用得（活動期內不適用）` };
   if (today > PROMO.useTo) return { ok: false, code: "expired", msg: `已過期（使用期至 ${ymd(PROMO.useTo)}）` };
+  if (today === OPENDAY) return { ok: false, code: "openday", msg: `今日開放日已經係 $${PROMO.price} 優惠價，必勝卡唔適用，請留返 ${ymd(PROMO.useTo)} 前再用` };
   return { ok: true, code: "ok", msg: `有效，可以減 $${PROMO.off}` };
 }
 
