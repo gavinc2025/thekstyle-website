@@ -5,7 +5,7 @@
 用法: python3 build_branches.py
 改分店資料/相片/點去，改呢個檔就得，唔好逐版 html 手改。
 """
-import os, html, json
+import os, html, json, re
 
 SITE   = "https://thekstyle.com"
 PHONE  = "+85368016817"
@@ -449,9 +449,9 @@ def tips_page():
     e = html.escape
     cards = "".join(
         f'<figure class="bp-vid" id="{f}"><video src="assets/video/{f}.mp4" poster="assets/video/{f}.jpg" controls preload="none" playsinline></video>'
-        f'<figcaption><b>{e(t)}</b>{e(d)}</figcaption></figure>' for f, t, d in KNOW_VIDEOS)
+        f'<figcaption><b><a href="tips/{f}" style="color:inherit">{e(t)}</a></b>{e(d)} <a href="tips/{f}">閱讀全文 →</a></figcaption></figure>' for f, t, d in KNOW_VIDEOS)
     ld = [{"@context": "https://schema.org", "@type": "VideoObject", "name": t, "description": d,
-           "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg", "contentUrl": f"{SITE}/assets/video/{f}.mp4",
+           "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg", "contentUrl": f"{SITE}/assets/video/{f}.mp4", "url": f"{SITE}/tips/{f}",
            "uploadDate": "2026-10-16T12:00:00+08:00", "inLanguage": "yue"} for f, t, d in KNOW_VIDEOS]
     title = "染髮、電髮、拉直小知識短片｜上手屋寰宇天下店"
     desc = (f"{len(KNOW_VIDEOS)} 條 30 秒廣東話短片：白頭髮點染、男士染髮揀色、染完褪色、電髮打理、拉直注意事項、游客洗头。"
@@ -521,6 +521,119 @@ if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"
 """
 
 
+def tips_article(i):
+    """11/9 一片多用：每條知識片一版文章 /tips/<檔名>（畫面字做內容；旁白係讀音寫法唔直接搬）"""
+    e = html.escape
+    f, t, d = KNOW_VIDEOS[i]
+    pj = os.path.expanduser(f"~/voxpix/projects/shangshouwu/{f}.json")
+    V = json.load(open(pj)) if os.path.exists(pj) else {"scenes": []}
+    strip = lambda h: re.sub(r"<[^>]+>", "", h or "").strip()
+    secs = []
+    for s in V.get("scenes", []):
+        if s.get("t") == "q" and s.get("h"):
+            secs.append(f'<p class="ta-lead">{e(strip(s["h"]))}</p>')
+        elif s.get("t") == "list" and s.get("items"):
+            secs.append(f'<h2>{e(strip(s.get("h")))}</h2><ul class="ta-pts">' + "".join(f"<li>{e(strip(x))}</li>" for x in s["items"]) + "</ul>")
+        elif s.get("t") in ("title", "img") and s.get("h"):
+            secs.append(f'<h2>{e(strip(s["h"]))}</h2>' + (f'<p>{e(strip(s["s"]))}</p>' if s.get("s") else ""))
+    SRCN = {"aad.org": "美國皮膚科學會 AAD", "healthline.com": "Healthline", "ncbi.nlm.nih.gov": "醫學文獻（PMC）", "nhs.uk": "英國 NHS",
+            "clevelandclinic.org": "Cleveland Clinic", "uab.edu": "UAB 阿拉巴馬大學", "sciencedaily.com": "ScienceDaily",
+            "lorealparisusa.com": "L'Oréal Paris", "doi.org": "醫學期刊（DOI）"}
+    srcs = [x for x in (V.get("sources") or []) if isinstance(x, str) and x.startswith("http")]   # ⚠️ 只出網址；內部備註（例如「用戶 10/17…」）唔出街
+    nm = lambda u: next((v for k, v in SRCN.items() if k in u), re.sub(r"^https?://(www\.)?([^/]+).*", r"\2", u))
+    pg = lambda u: "" if re.search(r"(PMC\d+|doi\.org|\.htm$)", u) else re.sub(r"[-_]+", " ", u.rstrip("/").rsplit("/", 1)[-1])
+    src_html = ("<h2>資料來源</h2><ol class=\"ta-src\">" + "".join(
+        f'<li><a href="{e(u)}" rel="noopener nofollow" target="_blank">{e(nm(u))}</a>{"：" + e(pg(u)) if pg(u) else ""}</li>' for u in srcs) + "</ol>") if srcs else ""
+    rel = [KNOW_VIDEOS[j] for j in (i - 1, i + 1, i + 2) if 0 <= j < len(KNOW_VIDEOS) and j != i][:3]
+    rel_html = "".join(f'<a class="ta-rel" href="{rf}"><img src="../assets/video/{rf}.jpg" alt="" loading="lazy"><span>{e(rt)}</span></a>' for rf, rt, _ in rel)
+    up = (V.get("rendered_at") or "2026-10-16 12:00").replace(" ", "T") + ":00+08:00"
+    url = f"{SITE}/tips/{f}"
+    zhs = f.startswith("k8_")   # 游客片用簡體
+    ld = [{"@context": "https://schema.org", "@type": "Article", "headline": t, "description": d, "inLanguage": "zh-Hans" if zhs else "zh-HK",
+           "datePublished": up, "dateModified": up, "mainEntityOfPage": url, "image": f"{SITE}/assets/video/{f}.jpg",
+           "author": {"@type": "Organization", "name": "上手屋 The K Style", "url": SITE + "/"},
+           "publisher": {"@type": "Organization", "name": "上手屋 The K Style", "logo": {"@type": "ImageObject", "url": f"{SITE}/assets/img/logo.png"}},
+           "video": {"@type": "VideoObject", "name": t, "description": d, "thumbnailUrl": f"{SITE}/assets/video/{f}.jpg",
+                     "contentUrl": f"{SITE}/assets/video/{f}.mp4", "uploadDate": up, "inLanguage": "yue"}},
+          {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+              {"@type": "ListItem", "position": 1, "name": "主頁", "item": SITE + "/"},
+              {"@type": "ListItem", "position": 2, "name": "染燙小知識", "item": f"{SITE}/tips"},
+              {"@type": "ListItem", "position": 3, "name": t, "item": url}]}]
+    return f"""<!DOCTYPE html>
+<html lang="{'zh-Hans' if zhs else 'zh-Hant'}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{e(t)}｜染燙小知識｜上手屋</title>
+<meta name="description" content="{e(d)}">
+<meta name="theme-color" content="#2D8484">
+<link rel="canonical" href="{url}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{e(t)}">
+<meta property="og:description" content="{e(d)}">
+<meta property="og:url" content="{url}">
+<meta property="og:image" content="{SITE}/assets/video/{f}.jpg">
+<meta property="og:locale" content="zh_HK">
+<link rel="icon" type="image/png" href="../assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/branch.css">
+<style>
+.ta{{max-width:720px;margin:0 auto}}.ta video{{width:100%;max-width:340px;aspect-ratio:9/16;display:block;margin:0 auto 24px;border-radius:14px;background:#000}}
+.ta h2{{font-size:1.25rem;margin:26px 0 10px}}.ta-lead{{font-size:1.15rem;font-weight:700}}
+.ta-pts{{list-style:none;padding:0;margin:0;display:grid;gap:8px}}.ta-pts li{{background:#fff;border:1px solid rgba(45,132,132,.25);border-left:4px solid #2D8484;border-radius:10px;padding:10px 14px}}
+.ta-src{{font-size:.92rem}}.ta-box{{background:#f3f8f8;border-radius:14px;padding:16px 18px;margin:26px 0}}
+.ta-rels{{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}}.ta-rel{{display:block;text-decoration:none;color:inherit;font-weight:700;font-size:.95rem}}
+.ta-rel img{{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;display:block;margin-bottom:6px}}
+</style>
+<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False, indent=2)}</script>
+</head>
+<body class="branch-page">
+<nav class="nav scrolled" id="nav">
+  <div class="wrap">
+    <a href="../index.html" class="nav-logo"><img src="../assets/img/logo-white.png" alt="The K Style 上手屋"><span class="zh">上手屋</span></a>
+    <div class="nav-links" id="navLinks">
+      <a href="../tips">染燙小知識</a>
+      <a href="../branches/universe#services">染燙收費</a>
+      <a href="tel:{PHONE}" class="btn btn-gold btn-sm nav-cta">致電預約</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="選單"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<header class="bp-head">
+  <div class="wrap">
+    <nav class="crumb" aria-label="麵包屑"><a href="../index.html">主頁</a> ‧ <a href="../tips">染燙小知識</a> ‧ <span>{e(t)}</span></nav>
+    <p class="bp-en">Hair Tips</p>
+    <h1>{e(t)}</h1>
+  </div>
+</header>
+<main>
+  <section class="wrap bp-sec ta">
+    <video src="../assets/video/{f}.mp4" poster="../assets/video/{f}.jpg" controls preload="metadata" playsinline></video>
+    <p>{e(d)}</p>
+    {''.join(secs)}
+    {src_html}
+    <div class="ta-box"><b>上手屋寰宇天下店</b>（黑沙環中街 194 號）樓上獨立染燙區：染髮 MOP 580 起、直髮 MOP 680 起、燙髮（電髮）MOP 780 起，唔分男女。請先致電 <a href="tel:{PHONE}">{PHONE_TXT}</a> 預約。
+      <div class="bp-cta" style="margin-top:12px"><a class="btn btn-gold" href="tel:{PHONE}">{ICO_PHONE} 致電預約</a> <a class="btn btn-teal" href="../branches/universe">{ICO_PIN} 寰宇天下店</a></div></div>
+    <h2>相關小知識</h2>
+    <div class="ta-rels">{rel_html}</div>
+    <p style="margin-top:20px"><a href="../tips">← 睇晒全部 {len(KNOW_VIDEOS)} 條染燙小知識</a></p>
+  </section>
+</main>
+<footer class="footer"><div class="wrap footer-bottom">© <span id="year"></span> The K Style 上手屋 ‧ <a href="tel:{PHONE}">{PHONE_TXT}</a></div></footer>
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+var t = document.getElementById("navToggle"), l = document.getElementById("navLinks");
+if (t && l) t.addEventListener("click", function () {{ l.classList.toggle("open"); }});
+</script>
+<script src="../js/bisheng-banner.js" defer></script>
+</body>
+</html>
+"""
+
+
 def main():
     root = os.path.dirname(os.path.abspath(__file__))
     out = os.path.join(root, "branches")
@@ -535,8 +648,13 @@ def main():
     with open(os.path.join(root, "tips.html"), "w", encoding="utf-8") as f:
         f.write(tips_page())
     print("寫咗 tips.html —", len(KNOW_VIDEOS), "條知識片")
+    os.makedirs(os.path.join(root, "tips"), exist_ok=True)
+    for i, (f, _, _) in enumerate(KNOW_VIDEOS):
+        with open(os.path.join(root, "tips", f + ".html"), "w", encoding="utf-8") as fh:
+            fh.write(tips_article(i))
+    print("寫咗 tips/ —", len(KNOW_VIDEOS), "篇知識文章")
     # sitemap
-    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}" for b in BRANCHES] + [f"{SITE}/tips", f"{SITE}/bisheng"]
+    urls = [f"{SITE}/"] + [f"{SITE}/branches/{b['slug']}" for b in BRANCHES] + [f"{SITE}/tips", f"{SITE}/bisheng"] + [f"{SITE}/tips/{f}" for f, _, _ in KNOW_VIDEOS]
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:
