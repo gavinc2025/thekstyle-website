@@ -10,6 +10,8 @@ import os, html, json, re
 SITE   = "https://thekstyle.com"
 PHONE  = "+85368016817"
 PHONE_TXT = "6801 6817"
+WA = "https://wa.me/85368016817"
+ICO_WA = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.6A8.4 8.4 0 1 1 21 11.5z"/></svg>')
 HOURS  = "星期一至日 10:00 – 20:00"
 import datetime
 TODAY  = datetime.date.today().isoformat()
@@ -395,10 +397,12 @@ def page(b, others):
       <li>{ICO_CLOCK}<span>{HOURS}</span></li>
       <li>{ICO_TAG}<span>{e('／'.join(f'{n} {p}' for n, p in b['price']))}{'／染髮 MOP 580 起' if b.get('services') else ''}</span></li>
       <li>{ICO_PHONE}<a href="tel:{PHONE}">{PHONE_TXT}</a></li>
+      <li>{ICO_WA}<a href="{WA}" target="_blank" rel="noopener">WhatsApp {PHONE_TXT}</a></li>
     </ul>
 
     <div class="bp-cta">
       <a class="btn btn-gold" href="tel:{PHONE}">{ICO_PHONE} 致電查詢</a>
+      <a class="btn btn-teal" href="{WA}" target="_blank" rel="noopener">{ICO_WA} WhatsApp 查詢</a>
       <a class="btn btn-outline" href="{map_url(b['map'])}" target="_blank" rel="noopener">{ICO_PIN} 用地圖帶路</a>
     </div>
   </div>
