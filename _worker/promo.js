@@ -172,6 +172,7 @@ export async function promoCard(env, data, name, today, test) {
     <div class="rrow"><input id="bs-id" type="text" maxlength="9" placeholder="例：AB23-CD45" autocapitalize="characters"><button id="bs-chk" class="bsbtn">查</button></div>
     <div id="bs-res"></div></div>
   <div class="mates">必勝卡只限澳大店、${ymd(PROMO.useFrom)}–${ymd(PROMO.useTo)}、每次一張；核銷咗嗰剪收 $${PROMO.price}（唔好計入「正常收費」）。</div>` : ""}
+  ${howTo(claimOn, useOn)}
 </div>
 ${useOn ? `<script src="/js/vendor/jsQR.min.js" defer></script>
 <script>
@@ -193,6 +194,26 @@ $("bs-file").onchange=async()=>{const f=$("bs-file").files[0];$("bs-file").value
   catch(e){$("bs-res").innerHTML='<p class="rerr">開唔到張相</p>'}finally{URL.revokeObjectURL(u)}};
 })();
 </script>` : ""}`;
+}
+
+// 師傅教學（11/20 燊哥批：步驟＝微信教學訊息；片＝真錄專屬連結＋客人領卡頁，30 秒）
+function howTo(claimOn, useOn) {
+  const a = `<ol><li>所有客人单剪一律收 <b>$${PROMO.price}</b>（学校卡、一般客人都是 $${PROMO.price}）。</li>
+<li>上面金边卡的 4 个数字＝「今日领卡密码」，每天不同。</li>
+<li>剪完跟客人说：「Google 搜『上手屋快剪』，点『考试必胜卡』，输入密码，就可以领一张 $${PROMO.off} 优惠券，${PROMO.useFrom.slice(5, 7) * 1}月${PROMO.useFrom.slice(8) * 1}号之后来剪就用得。」</li>
+<li>客人找不到：叫他直接打开 thekstyle.com/bisheng</li>
+<li>报数照旧。这段时间不用填「正常收费剪数」。</li></ol>`;
+  const b = `<ol><li>客人出示手机里的「考试必胜卡」（深绿色、有二维码）。</li>
+<li>点「📷 影客张必胜卡」→ 对着二维码拍一张。</li>
+<li>显示「有效」→ 点「确认使用」→ 见到「✅ 已核销」才收钱，这一剪收 <b>$${PROMO.price}</b>。</li>
+<li>显示「已用过／已过期／未到使用期」→ 不能减，照原价收。</li>
+<li>拍不到：在下面手打券号（卡上 8 个字）→ 点「查」。</li>
+<li>每次只可以用一张；报数照旧，用了必胜卡的不要算进「正常收费剪数」。</li></ol>`;
+  return `<details class="bshow"><summary>📖 点样用？（30 秒教学片）</summary>
+<video src="/assets/video/staff_bisheng.mp4" poster="/assets/video/staff_bisheng.jpg" controls playsinline preload="none"></video>
+${claimOn ? `<p class="bsh"><b>派卡（${ymd(PROMO.start)}–${ymd(PROMO.end)}）</b></p>${a}` : ""}
+${useOn ? `<p class="bsh"><b>收卡（${ymd(PROMO.useFrom)}–${ymd(PROMO.useTo)}）</b></p>${b}` : ""}
+<p class="mates">有问题即刻打电话给燊哥。</p></details>`;
 }
 
 // 老闆頁「必勝卡」分頁：今日密碼＋統計（KV list，張數唔多）
@@ -221,4 +242,6 @@ export const PROMO_CSS = `
 .bscard{margin-top:10px;border:2px solid var(--gold)}.bspin{background:#faf7ef;border-radius:10px;padding:10px 12px;margin:6px 0;text-align:center}
 .bspin small{display:block;color:var(--muted)}.bspin b{display:block;font-size:2.6rem;letter-spacing:.3em;color:var(--deep);font-variant-numeric:tabular-nums}
 .bsscan{margin:8px 0}.bsscan input[type=text]{flex:1;padding:8px;font-size:1.1rem;border:1px solid #ccd;border-radius:8px;text-transform:uppercase;letter-spacing:.1em}
-.bsbtn{padding:8px 16px;border:0;border-radius:8px;background:var(--teal);color:#fff;font-size:1rem}`;
+.bsbtn{padding:8px 16px;border:0;border-radius:8px;background:var(--teal);color:#fff;font-size:1rem}
+.bshow{margin-top:10px;border-top:1px dashed #d8cfb5;padding-top:8px}.bshow summary{font-weight:700;color:var(--teal);cursor:pointer;padding:4px 0}
+.bshow video{display:block;width:100%;max-width:320px;margin:8px auto;border-radius:10px;background:#000}.bshow ol{margin:4px 0 8px;padding-left:1.4em;line-height:1.6}.bshow ol li{display:list-item;border:0;padding:3px 0;margin:0;font-size:.95rem;justify-content:normal}.bsh{margin:8px 0 2px}`;
