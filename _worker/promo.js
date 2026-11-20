@@ -209,8 +209,10 @@ function howTo(claimOn, useOn) {
 <li>显示「已用过／已过期／未到使用期」→ 不能减，照原价收。</li>
 <li>拍不到：在下面手打券号（卡上 8 个字）→ 点「查」。</li>
 <li>每次只可以用一张；报数照旧，用了必胜卡的不要算进「正常收费剪数」。</li></ol>`;
-  return `<details class="bshow"><summary>📖 点样用？（30 秒教学片）</summary>
-<video src="/assets/video/staff_bisheng.mp4" poster="/assets/video/staff_bisheng.jpg" controls playsinline preload="none"></video>
+  // 11/20 燊哥：教學片要擺出嚟一眼見到（唔好收埋），步驟先收埋
+  return `<div class="bshow"><p class="bsh"><b>🎬 教学片（30 秒）</b></p>
+<video src="/assets/video/staff_bisheng.mp4" poster="/assets/video/staff_bisheng.jpg" controls playsinline preload="none"></video></div>
+<details class="bshow"><summary>📖 点样用？（文字步骤）</summary>
 ${claimOn ? `<p class="bsh"><b>派卡（${ymd(PROMO.start)}–${ymd(PROMO.end)}）</b></p>${a}` : ""}
 ${useOn ? `<p class="bsh"><b>收卡（${ymd(PROMO.useFrom)}–${ymd(PROMO.useTo)}）</b></p>${b}` : ""}
 <p class="mates">有问题即刻打电话给燊哥。</p></details>`;
