@@ -165,7 +165,8 @@ export async function promoCard(env, data, name, today, test) {
   return `<div class="card bscard" id="bscard">
   <div class="lbl">考試必勝卡${test ? ` <b class="leave">測試模式</b>` : ""}</div>
   ${claimOn ? `<div class="bspin"><small>今日領卡密碼（口頭講畀剪完髮嘅客）</small><b>${pin}</b>
-    <div class="mates">同客講：「Google 搜『上手屋快剪』，入去輸入呢個密碼就領到 $10 券。」每日密碼唔同。</div></div>` : ""}
+    <div class="mates">同客講：「Google 搜『上手屋快剪』，入去輸入呢個密碼就領到 $10 券。」每日密碼唔同。</div>
+    <div class="bsqr"><img src="/assets/img/promo/google_search_qr.png" alt="Google 搜上手屋快剪 二維碼" width="180" height="180"><small>或者俾客人用手機相機掃呢個二維碼 → 即刻 Google 搜「上手屋快剪」，撳入必勝卡頁再輸入密碼。</small></div></div>` : ""}
   ${useOn ? `<div class="bsscan">
     <label class="phbig">📷 影客張必勝卡<input type="file" accept="image/*" capture="environment" id="bs-file"></label>
     <div class="phsub"><small>影唔到可以手打券號（8 個字）</small></div>
@@ -242,7 +243,7 @@ export async function promoBoss(env, today) {
 
 export const PROMO_CSS = `
 .bscard{margin-top:10px;border:2px solid var(--gold)}.bspin{background:#faf7ef;border-radius:10px;padding:10px 12px;margin:6px 0;text-align:center}
-.bspin small{display:block;color:var(--muted)}.bspin b{display:block;font-size:2.6rem;letter-spacing:.3em;color:var(--deep);font-variant-numeric:tabular-nums}
+.bspin small{display:block;color:var(--muted)}.bsqr{margin-top:10px;padding-top:10px;border-top:1px dashed #e3d9bf}.bsqr img{display:block;margin:0 auto 6px;width:180px;height:180px;background:#fff;padding:8px;border-radius:10px}.bsqr small{display:block;color:var(--muted);font-size:.85rem}.bspin b{display:block;font-size:2.6rem;letter-spacing:.3em;color:var(--deep);font-variant-numeric:tabular-nums}
 .bsscan{margin:8px 0}.bsscan input[type=text]{flex:1;padding:8px;font-size:1.1rem;border:1px solid #ccd;border-radius:8px;text-transform:uppercase;letter-spacing:.1em}
 .bsbtn{padding:8px 16px;border:0;border-radius:8px;background:var(--teal);color:#fff;font-size:1rem}
 .bshow{margin-top:10px;border-top:1px dashed #d8cfb5;padding-top:8px}.bshow summary{font-weight:700;color:var(--teal);cursor:pointer;padding:4px 0}
