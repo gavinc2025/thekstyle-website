@@ -209,7 +209,7 @@ function howTo(claimOn, useOn) {
   const a = `<ol><li>所有客人单剪一律收 <b>$${PROMO.price}</b>（学校卡、一般客人都是 $${PROMO.price}）。</li>
 <li>上面金边卡的 4 个数字＝「今日领卡密码」，每天不同。</li>
 <li>剪完跟客人说：「Google 搜『上手屋快剪』，点『考试必胜卡』，输入密码，就可以领一张 $${PROMO.off} 优惠券，${PROMO.useFrom.slice(5, 7) * 1}月${PROMO.useFrom.slice(8) * 1}号之后来剪就用得。」</li>
-<li>客人找不到：叫他直接打开 thekstyle.com/bisheng</li>
+<li>客人找不到：叫客人用手机相机扫上面的二维码，会直接打开 Google 搜索结果（请不要给客人网址，要客人用 Google 搜索）。</li>
 <li>报数照旧。这段时间不用填「正常收费剪数」。</li></ol>`;
   const b = `<ol><li>客人出示手机里的「考试必胜卡」（深绿色、有二维码）。</li>
 <li>点「📷 影客张必胜卡」→ 对着二维码拍一张。</li>
