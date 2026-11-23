@@ -283,12 +283,15 @@ footer{text-align:center;font-size:.85rem;color:var(--muted);padding:24px 16px 4
     $("closed").textContent = today < P.start ? "領取期由 " + ymd(P.start) + " 開始，到時見！" : "領取期已經完咗，多謝支持！";
   }
 
+  // 記低客人由邊度嚟（Google 搜尋 → document.referrer＝google；11/23 燊哥要知客係咪真係用 Google 搜）
+  var ref = ""; try { ref = sessionStorage.getItem("bsref") || ""; if (!ref) { ref = document.referrer ? (new URL(document.referrer)).hostname : "-"; sessionStorage.setItem("bsref", ref); } } catch (e) { try { ref = document.referrer ? (new URL(document.referrer)).hostname : "-"; } catch (e2) {} }
+
   $("pin").addEventListener("input", function () { this.value = this.value.replace(/\D/g, "").slice(0, 4); });
   $("go").onclick = function () {
     var pin = $("pin").value;
     if (pin.length !== 4) { $("msg").className = "msg err"; $("msg").textContent = "請輸入 4 位數字密碼 / Please enter the 4-digit PIN"; return; }
     $("go").disabled = true; $("msg").className = "msg"; $("msg").textContent = "領取中…";
-    fetch("/api/bisheng/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: pin, dev: dev, test: test }) })
+    fetch("/api/bisheng/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: pin, dev: dev, test: test, ref: ref }) })
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (!j.ok) throw new Error(j.error || "領取唔到，請再試");

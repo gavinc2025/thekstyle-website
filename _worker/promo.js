@@ -90,7 +90,8 @@ export async function claim(request, env, today, body) {
   }
   let id;
   for (let i = 0; i < 5 && !id; i++) { const t = newId(); if (!await env.STATUS.get(`bs:v:${t}`)) id = t; }
-  const v = { id, at: new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 16).replace("T", " "), dev, test, used: null };
+  const ref = String(body.ref || "").toLowerCase().replace(/[^a-z0-9.\-]/g, "").slice(0, 60) || "-";
+  const v = { id, at: new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 16).replace("T", " "), dev, test, ref, used: null };
   await env.STATUS.put(`bs:v:${id}`, JSON.stringify(v), KEEP);
   await env.STATUS.put(`bs:dev:${dev}`, id, KEEP);
   return json({ ok: true, id, test, ...PROMO });
@@ -237,11 +238,16 @@ export async function promoBoss(env, today) {
   const real = vs.filter(v => v && !v.test), used = real.filter(v => v.used);
   const byDay = {};
   for (const v of real) byDay[v.at.slice(0, 10)] = (byDay[v.at.slice(0, 10)] || 0) + 1;
+  // 來源：Google 搜尋（目的）／直接開／其他；11/23 晚之前領嘅冇記錄
+  const src = v => !v.ref ? "未記錄" : /(^|\.)google\./.test(v.ref) ? "Google 搜尋" : v.ref === "-" ? "直接開（冇經 Google）" : v.ref;
+  const bySrc = {};
+  for (const v of real) bySrc[src(v)] = (bySrc[src(v)] || 0) + 1;
   const pinNote = inClaim(today) ? `今日領卡密碼：<b>${await dailyPin(env, today)}</b>` : `領取期 ${md(PROMO.start)}–${md(PROMO.end)}`;
   return `<p class="mates">${pinNote}；使用期 ${md(PROMO.useFrom)}–${md(PROMO.useTo)}（只限${PROMO.shop}）</p>
   <div class="cards"><div class="card"><div class="lbl">已領</div><div class="big">${real.length} 張</div></div>
     <div class="card"><div class="lbl">已用</div><div class="big">${used.length} 張</div></div></div>
   ${Object.keys(byDay).length ? `<div class="card leavecard"><div class="lbl">每日領取</div><table>${Object.entries(byDay).sort().map(([d, n]) => `<tr><th>${md(d)}</th><td>${n}</td></tr>`).join("")}</table></div>` : ""}
+  <div class="card leavecard"><div class="lbl">客人由邊度嚟</div><table>${Object.entries(bySrc).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><th>${esc(k)}</th><td>${n}</td></tr>`).join("")}</table></div>
   ${used.length ? `<div class="card leavecard"><div class="lbl">已用（最近 30 張）</div><table>${used.sort((a, b) => (b.used.date + b.used.at).localeCompare(a.used.date + a.used.at)).slice(0, 30)
     .map(v => `<tr><th>${md(v.used.date)} ${esc(v.used.at)}</th><td>${esc(v.id)} ‧ ${esc(v.used.by)}</td></tr>`).join("")}</table></div>` : ""}
   <p class="mates">測試券（?test=1 領嘅）唔計入。</p>`;
