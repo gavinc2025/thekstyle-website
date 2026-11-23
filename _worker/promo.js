@@ -69,24 +69,24 @@ function state(v, today) {
 export async function claim(request, env, today, body) {
   const test = !!body.test && today < PROMO.start;   // 測試券只限活動開始前（之後 ?test=1 照出真券規則）
   const dev = cleanDev(body.dev);
-  if (dev.length < 16) return json({ error: "請用手機瀏覽器開呢頁再試" }, 400);
+  if (dev.length < 16) return json({ error: "請用手機瀏覽器開呢頁再試 / Please open this page in your phone browser" }, 400);
   // 同一部手機已經領過 → 照俾返嗰張（截圖唔見咗都攞得返）
   const had = await env.STATUS.get(`bs:dev:${dev}`);
   if (had) {
     const v = await env.STATUS.get(`bs:v:${had}`, "json");
     if (v && v.test === test) return json({ ok: true, id: v.id, test: v.test, again: true, ...PROMO });
   }
-  if (!test && !inClaim(today)) return json({ error: today < PROMO.start ? `${ymd(PROMO.start)} 先開始領取` : "領取期已經完咗" }, 403);
+  if (!test && !inClaim(today)) return json({ error: today < PROMO.start ? `${ymd(PROMO.start)} 先開始領取` : "領取期已經完咗 / The claim period has ended" }, 403);
   const ip = request.headers.get("cf-connecting-ip") || "x";
   const fk = `bs:fail:${ip}:${today}`;
   const fails = +(await env.STATUS.get(fk)) || 0;
-  if (fails >= FAIL_MAX) return json({ error: "輸錯太多次，請聽清楚師傅講嘅密碼，聽日再試" }, 429);
+  if (fails >= FAIL_MAX) return json({ error: "輸錯太多次，請聽清楚師傅講嘅密碼，聽日再試 / Too many wrong tries, please try again tomorrow" }, 429);
   const pin = String(body.pin || "").replace(/\D/g, "");
   // 審批測試密碼（俾澳大審批試用；只限測試模式＋活動開始前，出嘅係測試券）
   const reviewOk = test && pin === REVIEW_PIN;
   if (!reviewOk && pin !== await dailyPin(env, today)) {
     await env.STATUS.put(fk, String(fails + 1), { expirationTtl: 60 * 60 * 26 });
-    return json({ error: "密碼唔啱，請問返師傅今日嘅密碼" }, 400);
+    return json({ error: "密碼唔啱，請問返師傅今日嘅密碼 / Wrong PIN, please ask the barber for today's PIN" }, 400);
   }
   let id;
   for (let i = 0; i < 5 && !id; i++) { const t = newId(); if (!await env.STATUS.get(`bs:v:${t}`)) id = t; }
@@ -166,7 +166,13 @@ export async function promoCard(env, data, name, today, test) {
   <div class="lbl">考試必勝卡${test ? ` <b class="leave">測試模式</b>` : ""}</div>
   ${claimOn ? `<div class="bspin"><small>今日領卡密碼（口頭講畀剪完髮嘅客）</small><b>${pin}</b>
     <div class="mates">同客講：「Google 搜『上手屋快剪』，入去輸入呢個密碼就領到 $10 券。」每日密碼唔同。</div>
-    <div class="bsqr"><img src="/assets/img/promo/google_search_qr.png" alt="Google 搜上手屋快剪 二維碼" width="180" height="180"><small>或者俾客人用手機相機掃呢個二維碼 → 即刻 Google 搜「上手屋快剪」，撳入必勝卡頁再輸入密碼。</small></div></div>` : ""}
+    <div class="bsqr"><img src="/assets/img/promo/google_search_qr.png" alt="Google 搜上手屋快剪 二維碼" width="180" height="180"><small>或者俾客人用手機相機掃呢個二維碼 → 即刻 Google 搜「上手屋快剪」，撳入必勝卡頁再輸入密碼。</small></div>
+    <div class="bsen" lang="en"><b>For English-speaking customers</b>
+      <p>Exam Lucky Card: <b>MOP 10 off</b> your next haircut here (Dec 18 – Jan 31).</p>
+      <ol><li>Scan the QR code above with your phone camera.</li>
+      <li>In the Google results, tap <b>考試必勝卡｜上手屋快剪</b> (thekstyle.com).</li>
+      <li>Enter today's PIN: <b>${pin}</b></li>
+      <li>Save or screenshot the card, and show it to the barber next time.</li></ol></div></div>` : ""}
   ${useOn ? `<div class="bsscan">
     <label class="phbig">📷 影客張必勝卡<input type="file" accept="image/*" capture="environment" id="bs-file"></label>
     <div class="phsub"><small>影唔到可以手打券號（8 個字）</small></div>
@@ -243,7 +249,7 @@ export async function promoBoss(env, today) {
 
 export const PROMO_CSS = `
 .bscard{margin-top:10px;border:2px solid var(--gold)}.bspin{background:#faf7ef;border-radius:10px;padding:10px 12px;margin:6px 0;text-align:center}
-.bspin small{display:block;color:var(--muted)}.bsqr{margin-top:10px;padding-top:10px;border-top:1px dashed #e3d9bf}.bsqr img{display:block;margin:0 auto 6px;width:180px;height:180px;background:#fff;padding:8px;border-radius:10px}.bsqr small{display:block;color:var(--muted);font-size:.85rem}.bspin b{display:block;font-size:2.6rem;letter-spacing:.3em;color:var(--deep);font-variant-numeric:tabular-nums}
+.bspin small{display:block;color:var(--muted)}.bsen{margin-top:10px;padding:10px 12px;background:#fff;border-radius:10px;text-align:left;font-size:.92rem;color:var(--deep)}.bsen p{margin:4px 0}.bsen ol{margin:4px 0 0;padding-left:1.3em}.bsen ol li{display:list-item;border:0;padding:2px 0}.bsqr{margin-top:10px;padding-top:10px;border-top:1px dashed #e3d9bf}.bsqr img{display:block;margin:0 auto 6px;width:180px;height:180px;background:#fff;padding:8px;border-radius:10px}.bsqr small{display:block;color:var(--muted);font-size:.85rem}.bspin b{display:block;font-size:2.6rem;letter-spacing:.3em;color:var(--deep);font-variant-numeric:tabular-nums}
 .bsscan{margin:8px 0}.bsscan input[type=text]{flex:1;padding:8px;font-size:1.1rem;border:1px solid #ccd;border-radius:8px;text-transform:uppercase;letter-spacing:.1em}
 .bsbtn{padding:8px 16px;border:0;border-radius:8px;background:var(--teal);color:#fff;font-size:1rem}
 .bshow{margin-top:10px;border-top:1px dashed #d8cfb5;padding-top:8px}.bshow summary{font-weight:700;color:var(--teal);cursor:pointer;padding:4px 0}
